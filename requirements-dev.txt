@@ -1,0 +1,9 @@
+# QNetra Discovery Layer — Development & Testing Dependencies
+-r requirements.txt
+
+# Test framework
+pytest>=7.4.0
+pytest-cov>=4.1.0
+
+# Linting / formatting (optional, recommended)
+# ruff>=0.1.0

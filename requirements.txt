@@ -1,0 +1,10 @@
+# QNetra Discovery Layer — Runtime Dependencies
+# Core framework
+pydantic>=2.0.0
+
+# Binary parsing for ELF and PE format inspection (Symbol table, imports, exports)
+# Decision: lief chosen over pefile for multi-format ELF + PE support (see DEC-007)
+lief>=0.14.0
+
+# HTTP client for future container registry support (not used in MVP, forward-compat)
+# requests>=2.31.0   # Uncomment when container registry scanning is added

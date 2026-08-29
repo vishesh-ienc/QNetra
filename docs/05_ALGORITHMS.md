@@ -1,0 +1,215 @@
+# 05 — Algorithms, Heuristics & Decision Logic
+
+> **DOCUMENT PURPOSE:** Authoritative technical specification of all discovery methods, risk quantification formulas, Mosca timeline assessments, and Post-Quantum recommendation algorithms implemented in **QNetra**.
+
+---
+
+## 1. Cryptographic Discovery Methods
+
+### Alg-01: Static AST-Based Cryptographic Primitive Extraction
+* **Name:** Abstract Syntax Tree (AST) Cryptographic Parser
+* **Module:** `scanners.repository.languages.python_analyzer`
+* **Purpose:** Inspects source code to accurately detect cryptographic library imports, function calls, and parameter instantiations without executing the code.
+* **Inputs:** Source code file contents (Python `ast.parse`).
+* **Processing:**
+  1. Parse source code into an Abstract Syntax Tree using Python's stdlib `ast` module.
+  2. Traverse nodes looking for `Import` / `ImportFrom` references matching known crypto modules (e.g. `cryptography.hazmat`, `Crypto.Cipher`, `hashlib`).
+  3. Identify `Call` nodes to key generation, cipher initialization, hashing, or signing functions against `scanners.registry.crypto_api_map`.
+  4. Extract literal arguments (e.g., key sizes like `2048`, cipher modes like `AES.MODE_CBC`, curve names like `secp256r1`).
+  5. Capture code location (filename, start line, end line, snippet).
+* **Outputs:** `List[RawFinding]` containing structured call details and arguments.
+* **Assumptions:** Target code is syntactically valid code in supported languages.
+* **Limitations:** Dynamic code evaluation (`eval`, dynamic reflection) may obscure parameter values.
+* **Why Selected:** Zero runtime overhead, highly accurate with minimal false positives compared to pure regex.
+
+---
+
+### Alg-02: Heuristic Regex Pattern Signature Matcher
+* **Name:** Multi-Pattern Cryptographic Signature Engine
+* **Module:** `scanners.registry.crypto_patterns`, `scanners.repository.languages.*`
+* **Purpose:** Detects hardcoded private keys, certificate blocks, cipher suite strings, and configuration parameters across source code, config files, and comments.
+* **Inputs:** Raw file text.
+* **Processing:**
+  1. Evaluate regex signatures for PEM headers (`-----BEGIN RSA PRIVATE KEY-----`, `-----BEGIN EC PRIVATE KEY-----`, `-----BEGIN CERTIFICATE-----`).
+  2. Match TLS cipher suite strings (e.g., `TLS_RSA_WITH_AES_128_CBC_SHA256`, `ECDHE-RSA-AES256-GCM-SHA384`).
+  3. Match algorithm identifiers in config and code files (`AES-256-GCM`, `RSA-2048`, `SHA-256`, `bcrypt`, `PBKDF2`).
+  4. Apply comment-aware confidence de-rating: matches inside comments receive lower base scores (0.15–0.35) than matches in executable code (0.60–0.78).
+* **Outputs:** `List[RawFinding]` with file locations, confidence rationales, and matched patterns.
+* **Assumptions:** Standard cryptographic naming conventions are followed.
+* **Limitations:** Higher false-positive potential; mitigated by multi-signal confidence scoring and classification validation.
+
+---
+
+### Alg-03: Multi-Signal Discovery Confidence Scoring
+* **Name:** Deterministic Multi-Signal Confidence Calculator
+* **Module:** `scanners.repository.confidence`
+* **Purpose:** Quantifies how certain QNetra is that a discovered artifact is an active cryptographic component (0.0 to 1.0), distinct from risk score or migration urgency.
+* **Inputs:** Primary signal type, corroborating signals (import detected, argument extracted, API registry match).
+* **Processing Formula:**
+
+$$\text{Confidence} = \min\left(\text{Base}(\text{Signal}) + \sum \text{Bonus}(\text{Corroboration}), \text{Cap}(\text{Signal})\right)$$
+
+| Signal Type | Base Score | Cap | Description |
+| :--- | :--- | :--- | :--- |
+| **AST Crypto API Call** | 0.90 | 0.98 | Confirmed function call via AST parsing |
+| **Known Binary Symbol Import** | 0.90 | 0.95 | Confirmed function import in ELF/PE symbol table |
+| **Library Import Only** | 0.60 | 0.70 | Library imported but no specific call detected |
+| **Regex in Executable Code** | 0.62 | 0.75 | Algorithm string/pattern in active code line |
+| **Package Manifest Metadata** | 0.70 | 0.85 | Package detected in dpkg/pip/npm metadata |
+| **Binary String Match** | 0.35 | 0.55 | Algorithm string extracted from binary data |
+| **Regex in Comment** | 0.18 | 0.30 | Pattern matched on a comment line |
+
+* **Corroborating Bonuses:**
+  * Corroborating library import detected: $+0.05$
+  * Concrete argument/parameter extracted: $+0.03$
+  * Known API registry match: $+0.02$
+  * Corroborating binary symbol import: $+0.15$ (for binary strings)
+* **Outputs:** `confidence_score` (float 0.0–1.0), `confidence_level` enum, and human-readable `confidence_rationale`.
+
+---
+
+### Alg-04: Static Binary Symbol & String Extraction
+* **Name:** Multi-Stage Binary Cryptographic Inspector
+* **Module:** `scanners.binary.*`
+* **Purpose:** Discovers cryptographic capabilities within compiled binaries (ELF, PE) without code execution.
+* **Inputs:** Binary file bytes.
+* **Processing:**
+  1. **Format Detection:** Read magic bytes to identify ELF (`\x7fELF`), PE (`MZ`), Mach-O, or static archives.
+  2. **String Analysis:** Stream printable ASCII strings ($\ge 8$ chars); match OpenSSL/BoringSSL/libsodium version strings, TLS cipher suites, and embedded PEM blocks.
+  3. **Symbol Table Parsing:** If `lief` is available and format is ELF/PE, inspect dynamic symbol tables (`imported_functions`, PE import directory) against `scanners.registry.crypto_symbols`.
+  4. **Multi-Signal Correlation:** Deduplicate string matches with symbol findings; boost string confidence if corroborated by symbol tables; generate library summary findings for binaries with $\ge 3$ crypto symbols.
+* **Outputs:** `List[RawFinding]` with binary format, symbol names, byte offsets, and confidence rationales.
+* **Safety Invariant:** Purely static analysis — no process execution, no dynamic instrumentation (RULE-008).
+
+---
+
+## 2. Cryptographic Classification & Parameter Logic
+
+### Alg-05: Primitive & Quantum Threat Categorization
+* **Name:** Cryptographic Primitive Classifier
+* **Purpose:** Categorizes discovered cryptographic assets and tags their specific quantum threat mechanism.
+* **Inputs:** Normalized `CryptoAsset`.
+* **Processing:**
+  Classify into functional classes and quantum threat mechanisms:
+  
+  $$\text{Primitive Class} \in \{\text{Asymmetric PKC}, \text{Symmetric Cipher}, \text{Hash Function}, \text{KDF}, \text{Digital Signature}, \text{MAC}, \text{Protocol/TLS}\}$$
+
+  Assign quantum impact vector:
+  * **Shor's Algorithm Impact:** Completely breaks all classical asymmetric cryptography (Integer Factorization and Discrete Logarithms: RSA, DSA, DH, ECDH, ECDSA, Ed25519) in $\mathcal{O}((\log N)^3)$ polynomial time.
+  * **Grover's Algorithm Impact:** Quadratic speedup against symmetric ciphers and hashing, reducing effective security from $N$ bits to $\sqrt{N}$ bits (e.g., AES-128 provides 64-bit quantum security; AES-256 provides 128-bit quantum security).
+* **Outputs:** Enriched `CryptoAsset` with `primitive_category`, `quantum_threat_type`, and `quantum_security_bits`.
+
+---
+
+## 3. Quantum Risk Assessment Engine
+
+### Alg-04: Deterministic Quantum Vulnerability Risk Scoring
+* **Name:** Multi-Factor Quantum Cryptographic Risk Calculator
+* **Purpose:** Computes an explainable, deterministic risk score (0 to 100) and 4-tier severity rating for every asset and the overall repository.
+* **Inputs:** `CryptoAsset` parameters:
+  * $A_{\text{type}}$: Algorithmic Family (RSA, ECC, AES, SHA, etc.)
+  * $K_{\text{len}}$: Key Length / Security Bits
+  * $C_{\text{dep}}$: Classical Deprecation Status (NIST SP 800-131A)
+  * $E_{\text{ctx}}$: Exposure Context (External Facing, Key Exchange, At-Rest Storage)
+* **Processing:**
+
+```
+Risk Scoring Formula:
+Base Score (B) determined by Algorithmic Class:
+  - Shor-Vulnerable Asymmetric (RSA, ECC, DH, ECDSA): B = 90
+  - Grover-Impacted Symmetric < 256 bits (AES-128, 3DES): B = 60
+  - Broken Classical Primitives (MD5, SHA-1, DES): B = 100
+  - Quantum-Resistant Classical (AES-256, SHA-384, SHA-512): B = 20
+  - NIST-Approved PQC (ML-KEM, ML-DSA, SLH-DSA): B = 0
+
+Key Length Modifier (M_key):
+  - If RSA Key < 2048: M_key = +10
+  - If RSA Key >= 4096: M_key = -5
+  - If AES Key == 128: M_key = +10
+  - If AES Key == 256: M_key = -10
+
+Final Asset Risk Score = Clamp(B + M_key + ContextBonus, 0, 100)
+```
+
+* **Severity Tiers:**
+  * **Critical Risk (80–100):** Shor-vulnerable asymmetric algorithms (RSA, ECC, DH), broken primitives (MD5, SHA1, DES). Immediate migration required.
+  * **High Risk (60–79):** Symmetric ciphers with $< 256$-bit keys (AES-128), SHA-224, legacy TLS cipher suites without forward secrecy.
+  * **Medium Risk (30–59):** SHA-256 (adequate pre-quantum, medium longevity), proprietary implementations.
+  * **Low / Quantum-Resistant (0–29):** AES-256, SHA-384/512, standardized PQC algorithms (ML-KEM, ML-DSA).
+* **Outputs:** `AssetRiskScore`, `RepositoryRiskSummary`, itemized score explanation string.
+* **Assumptions:** NIST SP 800-131A and NIST PQC transition parameters.
+* **Limitations:** Does not assess physical side-channel leakage; focuses on algorithmic and parameter strength.
+* **Why Selected:** Fully deterministic, auditable, and transparent for compliance audits.
+
+---
+
+## 4. Mosca Migration Assessment Logic
+
+### Alg-05: Michele Mosca Migration Inequality & Urgency Evaluation
+* **Name:** Mosca Theorem Quantum Urgency Calculator
+* **Purpose:** Evaluates whether an organization is already in a state of quantum vulnerability due to the Harvest Now, Decrypt Later (HNDL) threat model.
+* **Mathematical Model:**
+
+$$\text{Mosca's Inequality:} \quad X + Y > Z$$
+
+Where:
+* **$X$ (Shelf Life / Security Lifetime):** The number of years the encrypted data must remain confidential (e.g., healthcare records: 20–30 years, financial records: 10 years, session tokens: 0.1 years).
+* **$Y$ (Migration Time):** The number of years required to re-architect systems, update protocols, deploy PQC, and certify infrastructure (typically 3–7 years for enterprise systems).
+* **$Z$ (Collapse Time / Quantum Horizon):** The estimated number of years until a Cryptographically Relevant Quantum Computer (CRQC) exists (industry consensus: 2030–2035, i.e., 5–10 years).
+
+```mermaid
+gantt
+    title Mosca Timeline Model: X + Y vs Z
+    dateFormat  YYYY
+    section Quantum Horizon
+    Z: Time to CRQC Arrival        :crit, 2026, 2034
+    section Organization Timeline
+    Y: Migration Duration          :active, 2026, 2030
+    X: Data Shelf Life             :2030, 2042
+    section Vulnerability Gap
+    HNDL Vulnerability Window      :done, 2034, 2042
+```
+
+* **Decision Logic:**
+
+$$\text{Exposure Gap} = (X + Y) - Z$$
+
+* **Condition 1 ($X + Y > Z$):** **CRITICAL HNDL EXPOSURE.**
+  Adversaries harvesting encrypted traffic today will be able to decrypt it before the data loses its confidentiality value. Migration must begin immediately.
+* **Condition 2 ($X + Y = Z$):** **ZERO MARGIN.**
+  Migration must start today; any delay will cause data to be exposed to post-quantum decryption.
+* **Condition 3 ($X + Y < Z$):** **CONTROLLED TIMELINE.**
+  The organization has a migration buffer of $Z - (X + Y)$ years before data confidentiality is compromised.
+* **Outputs:**
+  * `is_vulnerable`: Boolean flag
+  * `exposure_gap_years`: $\max(0, (X + Y) - Z)$
+  * `deadline_year`: $\text{Current Year} + (Z - X)$
+  * `urgency_rating`: `CRITICAL_IMMEDIATE` | `HIGH_PLANNED` | `MODERATE`
+* **Why Selected:** Recognized globally (NIST, ENISA, BSI, WEF) as the standard framework for post-quantum migration planning.
+
+---
+
+## 5. PQC & Hybrid Recommendation Logic
+
+### Alg-06: NIST PQC & Hybrid Migration Decision Engine
+* **Name:** Post-Quantum Replacement & Transition Recommender
+* **Purpose:** Maps vulnerable classical cryptographic primitives to approved NIST PQC replacements and transitional hybrid schemes.
+* **Mapping Matrix:**
+
+| Classical Primitive | Primary Function | Primary NIST PQC Replacement | Secondary / Alternative PQC | Recommended Hybrid Scheme |
+| :--- | :--- | :--- | :--- | :--- |
+| **RSA Key Exchange** | Key Encapsulation | **ML-KEM-768** (FIPS 203) | **ML-KEM-1024** (High Sec) | `X25519 + ML-KEM-768` |
+| **ECDH / X25519** | Key Agreement | **ML-KEM-768** (FIPS 203) | **ML-KEM-512** (Resource Constrained) | `ECDH (P-256) + ML-KEM-768` |
+| **RSA Digital Signature** | Auth / Signatures | **ML-DSA-65** (FIPS 204) | **SLH-DSA-SHA2-128s** (FIPS 205) | `RSA-2048 + ML-DSA-65` |
+| **ECDSA (secp256k1/r1)** | Signatures / Web3 | **ML-DSA-44 / 65** (FIPS 204) | **FN-DSA / Falcon** (FIPS 206) | `ECDSA + ML-DSA-65` |
+| **AES-128** | Symmetric Encryption| **AES-256-GCM** | **ChaCha20-Poly1305** (256-bit) | N/A (Increase Key Length to 256 bits) |
+| **SHA-1 / SHA-224** | Hashing / Digest | **SHA-384 / SHA-512 / SHA3-256** | **SHAKE256** | N/A (Migrate to SHA-2/3 $\ge 256$ bits) |
+
+* **Recommendation Generation Steps:**
+  1. Identify vulnerable primitive and operational usage context (e.g. Signature vs Key Exchange).
+  2. Select NIST PQC target standard.
+  3. Formulate Hybrid recommendation to allow dual verification during transition.
+  4. Estimate migration complexity (Low, Medium, High).
+  5. Provide code refactoring guidelines and reference imports.
+* **Outputs:** `List[PQCRecommendationItem]` with target algorithm, hybrid mode, complexity, and actionable steps.
+* **Why Selected:** Guarantees alignment with official US Federal Information Processing Standards (FIPS) finalized in August 2024.
