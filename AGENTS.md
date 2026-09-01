@@ -51,6 +51,7 @@ Before executing any code changes or proposing designs, every agent must execute
 
 ### Discovery Documents Reference:
 * High-density status & architecture snapshot: [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+* Comprehensive current project status & health: [current_status.md](current_status.md)
 * Active engineering constraints & governance: [PROJECT_RULES.md](PROJECT_RULES.md)
 * Project mission & front door: [README.md](README.md)
 * Real-time progress & roadmap: [docs/07_PROGRESS.md](docs/07_PROGRESS.md)
@@ -91,7 +92,7 @@ Whenever any change is made, evaluate the following checklist:
 
 | Reflection Question | If YES, Action Required | Target Document |
 | :--- | :--- | :--- |
-| *Did this change advance implementation, complete a milestone, or change next steps?* | **Update current state, implemented list, and next priorities** | [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) & [docs/07_PROGRESS.md](docs/07_PROGRESS.md) |
+| *Did this change advance implementation, complete a milestone, or change next steps?* | **Update current state, implemented list, and next priorities** | [current_status.md](current_status.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) & [docs/07_PROGRESS.md](docs/07_PROGRESS.md) |
 | *Did this change affect system scope or boundaries?* | Update scope, requirements, or traceability | [docs/01_PROJECT_SCOPE.md](docs/01_PROJECT_SCOPE.md) |
 | *Did this change modify layers, components, or boundaries?* | Update architecture description, diagrams & change history | [docs/02_SYSTEM_ARCHITECTURE.md](docs/02_SYSTEM_ARCHITECTURE.md) |
 | *Did this change alter how data moves through QNetra?* | Update data flow pipeline table & stage breakdown | [docs/03_DATA_FLOW.md](docs/03_DATA_FLOW.md) |

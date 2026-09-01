@@ -158,6 +158,7 @@ Implement core/normalization/ to convert RawFinding v1.1.0 into canonical Crypto
 QNetra/
 │
 ├── PROJECT_CONTEXT.md             ← (THIS FILE) High-density AI agent handoff document
+├── current_status.md              ← Comprehensive live status, health metrics & module inventory
 ├── README.md                      ← Project front door, overview, and status badges
 ├── AGENTS.md                      ← Persistent operating instructions for AI agents
 ├── PROJECT_RULES.md               ← Active engineering constraints and governance rules
@@ -284,5 +285,5 @@ IF YOU ARE A NEW AI AGENT JOINING QNETRA:
 5. Inspect only the modules relevant to your specific assigned task.
 6. Consult detailed docs in /docs only when needed for specific schema/formula details.
 7. Run the test suite (`python -m pytest tests/`) before and after making changes.
-8. Update PROJECT_CONTEXT.md and affected docs in /docs upon completing your task.
+8. Update current_status.md, PROJECT_CONTEXT.md, and affected docs in /docs upon completing your task.
 ```
