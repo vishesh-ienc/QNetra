@@ -1,7 +1,7 @@
 # QNetra — Project Status & Implementation Summary
 
-> **Current As Of:** September 2, 2026  
-> **Status:** 🟢 **Active / Phase 1 Completed & Validated (77/77 Tests Passing — 80% Coverage — 289 Real Findings Captured)**  
+> **Current As Of:** September 2, 2026
+> **Status:** 🟢 **Active / Phase 1 Validated — API & Frontend Specs Frozen — Transitioning to Phase 2**
 > **Tracking Protocol:** This document is the comprehensive single-file status report for **QNetra**, maintained and updated on every meaningful progress milestone, architectural decision, and codebase update.
 
 ---
@@ -27,6 +27,8 @@
 | **Active Blockers** | 🟢 **None** | No blocking architectural or operational defects |
 | **Documentation Sync** | 🟢 **100% Synchronized** | `docs/01` to `docs/09`, `AGENTS.md`, `PROJECT_RULES.md`, `PROJECT_CONTEXT.md`, `current_status.md` |
 | **Next Target Milestone** | **Phase 2: Core Normalization & CBOM** | `core/normalization/`, `core/classification/`, `core/cbom_generator/` |
+| **API Contract** | 🟢 **Frozen** — `docs/10_API_CONTRACT.md` | 20 sections, full endpoint map, JSON examples, error conventions |
+| **Frontend Spec** | 🟢 **Frozen** — `docs/11_FRONTEND_PRODUCT_SPEC.md` | 12 sections, E2E user flow, component guidance, visual direction |
 
 ---
 

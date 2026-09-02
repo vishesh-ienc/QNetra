@@ -272,6 +272,51 @@ Evolve the `RawFinding` data contract to `v1.1.0`:
 
 ---
 
+### DEC-009 — API Contract and Frontend Product Specification Frozen Before Phase 4
+
+* **Date:** 2026-09-02
+* **Status:** Accepted
+* **Deciders:** System Architect & Core Team
+
+#### Context
+Phase 4 requires two independently developed artifacts: a FastAPI backend and a frontend
+application. Without a frozen, authoritative contract between them, parallel development will
+produce incompatible interfaces, duplicated logic, and architectural drift.
+
+#### Decision
+Before any Phase 4 implementation begins, freeze:
+1. **`docs/10_API_CONTRACT.md`** — The complete, endpoint-by-endpoint API design contract
+   covering all 12 user journey stages from artifact upload through migration roadmap export.
+2. **`docs/11_FRONTEND_PRODUCT_SPEC.md`** — The complete frontend product specification
+   covering all screens, the end-to-end user flow, component guidance, visual direction,
+   and the explicit implementation boundary separating frontend from backend and core.
+
+#### Reasoning
+* Frozen contracts enable parallel development of backend and frontend without coordination overhead.
+* The contract is designed around the user journey (not internal modules), ensuring the API surface
+  reflects product intent, not implementation accidents.
+* Clearly documenting the implementation boundary (frontend = presentation; core = intelligence)
+  prevents the frontend from duplicating risk calculations, Mosca logic, or PQC recommendations.
+* Marking Phase 2/3 engine dependencies explicitly (e.g. assets require normalization) prevents
+  the frontend team from building against APIs that cannot yet return data.
+
+#### Alternatives Considered
+* **Design API ad-hoc during Phase 4:** Rejected — leads to contract churn and incompatible assumptions.
+* **Single combined backend+frontend monolith:** Rejected — violates the layered architecture in DEC-002 and DEC-005.
+
+#### Consequences
+* **Positive:** Frontend coding agents can start implementation against the stable contract.
+  Backend team can implement routes against the same contract simultaneously.
+* **Constraint:** Changes to `docs/10_API_CONTRACT.md` must follow the Section 20 governance protocol.
+* **Constraint:** The frontend must not implement any logic from `core/` or `scanners/`.
+
+#### Related Modules / Data Contracts
+* `docs/10_API_CONTRACT.md`, `docs/11_FRONTEND_PRODUCT_SPEC.md`
+* `docs/06_API_AND_DATA_CONTRACTS.md` (internal `RawFinding` and `CryptoAsset` schemas)
+* `docs/02_SYSTEM_ARCHITECTURE.md` (layer boundaries)
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
@@ -284,3 +329,4 @@ Evolve the `RawFinding` data contract to `v1.1.0`:
 | **DEC-006** | Promotion of Container and Binary Scanners to Phase 1 Discovery Subsystem | 2026-08-29 | Accepted |
 | **DEC-007** | Integration of `lief` for Static Binary Symbol Inspection with Graceful Fallback | 2026-08-29 | Accepted |
 | **DEC-008** | Evolution of `RawFinding` Schema to v1.1.0 with Quantitative Multi-Signal Confidence | 2026-08-29 | Accepted |
+| **DEC-009** | API Contract and Frontend Product Specification Frozen Before Phase 4 | 2026-09-02 | Accepted |
