@@ -1,6 +1,6 @@
 # QNetra — Raw Findings Demonstration
 
-> **Generated:** 2026-09-02T10:21:47Z  
+> **Generated:** 2026-09-02T10:36:45Z  
 > **Purpose:** Demonstrates the Phase 1 Cryptographic Discovery Layer by scanning controlled cryptographic test fixtures and recording the actual `RawFinding` objects returned by QNetra's real scanners.
 
 > [!IMPORTANT]
@@ -28,7 +28,7 @@ That is Phase 2 (Normalization → CryptoAsset → CBOM → Risk → Mosca).
 
 | Property | Value |
 | :--- | :--- |
-| **Scan Date** | 2026-09-02T10:21:47Z |
+| **Scan Date** | 2026-09-02T10:36:45Z |
 | **Operating System** | win32 |
 | **Python Version** | 3.13.1 |
 | **QNetra Scanner Version** | v1.0.0 (Phase 1 Discovery Layer) |
