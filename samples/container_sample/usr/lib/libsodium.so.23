@@ -1,0 +1,6 @@
+libsodium.so.23 placeholder — QNetra container scanner fixture
+libsodium 1.0.18
+crypto_box_easy
+crypto_secretbox_easy
+crypto_sign_ed25519
+crypto_kx_keypair

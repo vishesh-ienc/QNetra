@@ -1,0 +1,52 @@
+Package: openssl
+Version: 3.0.2-0ubuntu1.10
+Status: install ok installed
+Architecture: amd64
+Description: Secure Sockets Layer toolkit - cryptographic utility
+ This package is part of the OpenSSL project's implementation of the SSL
+ and TLS cryptographic protocols for secure communication over the Internet.
+
+Package: libssl3
+Version: 3.0.2-0ubuntu1.10
+Status: install ok installed
+Architecture: amd64
+Description: Secure Sockets Layer shared libraries
+ libssl implements the SSL/TLS protocol. It is built on top of libcrypto.
+ TLS 1.3 and TLS 1.2 are supported.
+
+Package: libgcrypt20
+Version: 1.9.4-3ubuntu3
+Status: install ok installed
+Architecture: amd64
+Description: LGPL Crypto library - runtime library
+ libgcrypt contains cryptographic functions. Many important free
+ ciphers, hash algorithms and public key signing functions are
+ implemented.
+
+Package: gnupg
+Version: 2.2.27-3ubuntu2.1
+Status: install ok installed
+Architecture: amd64
+Description: GNU privacy guard - a free PGP replacement
+ GnuPG is GNU's tool for secure communication and data storage.
+
+Package: python3
+Version: 3.10.6-1~22.04
+Status: install ok installed
+Architecture: amd64
+Description: interactive high-level object-oriented language (default python3 version)
+
+Package: ca-certificates
+Version: 20211016ubuntu0.22.04.1
+Status: install ok installed
+Architecture: all
+Description: Common CA certificates
+ Contains the certificate authorities shipped with Mozilla's browser
+ to allow SSL-based applications to check for the authenticity of SSL connections.
+
+Package: openssh-client
+Version: 1:8.9p1-3ubuntu0.4
+Status: install ok installed
+Architecture: amd64
+Description: secure shell (SSH) client, for secure access to remote machines
+

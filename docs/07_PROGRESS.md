@@ -73,6 +73,12 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
   * [x] Created multi-language sample suites in `samples/repository_samples/` (Python, JS, Java, C).
   * [x] Built test suite (`tests/`) spanning framework, repository, container, binary, and integration tests.
   * [x] Executed full test suite: 77/77 tests passing, 80% total codebase coverage.
+* [x] **Phase 1 Manual Validation & Demonstration (2026-09-02):**
+  * [x] Created synthetic container filesystem fixture (`samples/container_sample/`) with shared libs (libssl, libcrypto, libsodium), dpkg metadata, pip packages, npm packages, and SSL certificate.
+  * [x] Created synthetic ELF binary fixture with embedded crypto strings (`samples/binary_samples/sample_crypto_binary.elf`) using `scripts/generate_binary_fixture.py`.
+  * [x] Implemented orchestration demo script (`scripts/demo_scan.py`) exercising all 3 real Phase 1 scanners.
+  * [x] Executed full scanner demonstration — 289 raw findings across all fixtures (Python:133, JS:44, Java:42, C/C++:50, Container:16, Binary:4).
+  * [x] Generated `raw_findings.md` from actual scanner output — no manual editing.
 
 ---
 
@@ -118,9 +124,11 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
 
 | Timestamp (ISO) | Author | Change Summary | Affected Files |
 | :--- | :--- | :--- | :--- |
+| 2026-09-02T10:21:00 | AI Agent | Phase 1 manual validation: created container/binary fixtures, demo script, and generated raw_findings.md (289 real findings) | `samples/container_sample/*`, `samples/binary_samples/*`, `scripts/*`, `raw_findings.md`, `current_status.md`, `docs/07_PROGRESS.md` |
+| 2026-09-01T14:57:00 | AI Agent | Created current_status.md living status tracker and registered it in AGENTS.md + PROJECT_CONTEXT.md | `current_status.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
 | 2026-08-29T18:25:00 | AI Agent | Implemented Discovery Layer foundation, Repository Scanner, Container Scanner, Binary Scanner, Registries, and 77-test suite | `scanners/*`, `samples/*`, `tests/*`, `docs/*` |
 | 2026-08-29T16:10:00 | System Init | Created repository structure, all core documentation files, rules, and data contracts | `README.md`, `AGENTS.md`, `PROJECT_RULES.md`, `docs/*` |
 
 ---
 
-**Last Updated:** 2026-08-29T18:28:00+05:30
+**Last Updated:** 2026-09-02T10:21:00+05:30
