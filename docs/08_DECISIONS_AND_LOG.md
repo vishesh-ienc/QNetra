@@ -419,13 +419,50 @@ Orthogonal classification prevents incorrect correlations (e.g., "it's classical
 
 ---
 
+### DEC-013 — CycloneDX 1.6 CBOM Generation Architecture
+
+* **Date:** 2026-09-04
+* **Status:** Accepted
+* **Deciders:** AI Agent (Phase 2 Milestone 2.3)
+
+#### Context
+Milestone 2.3 required designing a CBOM serialization layer. Key design decisions included: (a) how to map QNetra `PrimitiveType` to CycloneDX 1.6 `primitive` enum values, (b) how to handle unknown parameters without fabrication, (c) how to preserve scanner evidence, (d) determinism requirements, and (e) the scope of schema validation.
+
+#### Decision
+1. **Layered architecture:** `mapper.py` handles CryptoAsset → CDXComponent translation; `serializer.py` handles BOM assembly and JSON/XML output; `validator.py` handles structural validation. Concerns are strictly separated.
+2. **No-fabrication in CBOM:** If `key_length_bits=None`, `parameterSetIdentifier` is omitted. If `curve=None`, the `curve` field is omitted. Unknown parameters do not produce invented defaults in the CBOM output.
+3. **qnetra: namespaced properties:** QNetra-specific metadata (asset_id, quantum threat type, classification notes, finding IDs) is preserved in CycloneDX `properties` blocks with `qnetra:` prefix to clearly separate extensions from standard fields.
+4. **Evidence occurrences:** Scanner-discovered source locations are mapped to CycloneDX `evidence.occurrences` blocks for full audit traceability.
+5. **Primitive routing:** `PrimitiveType.SYMMETRIC_CIPHER` maps to `ae` (when mode is in {GCM, CCM, EAX, ...}), `block-cipher` (non-AE modes or unknown mode), or `stream-cipher` (ChaCha20, RC4 families). `ML-KEM` → `kem`. `ML-DSA`/`SLH-DSA` → `post-quantum`.
+6. **Deterministic serialization:** Sorted by `asset_id`, fixed serial number in deterministic mode, no live timestamps. Identical input always produces identical JSON.
+7. **Structural validator (not full JSON Schema):** Implemented a targeted structural validator covering required fields, enum bounds, bom-ref uniqueness, and nistQuantumSecurityLevel range. Full JSON Schema validation deferred to CI toolchain.
+
+#### Reasoning
+No-fabrication in the CBOM is critical because downstream tools (risk engines, auditors) rely on the CBOM as an authoritative record. Fabricated key lengths would produce incorrect risk scores. The qnetra: property namespace follows CycloneDX extensibility guidelines and allows round-trip traceability.
+
+#### Alternatives Considered
+* Embed library name in `cryptoProperties.implementationLibrary` (Rejected: not a standard CDX 1.6 field at this nesting level; moved to qnetra: property).
+* Full JSON Schema validation using jsonschema + official schema file (Deferred: requires network or bundled schema; structural validator is sufficient for MVP).
+* Single combined serializer+validator class (Rejected: violates separation of concerns; downstream tools may want raw dict for their own validation).
+
+#### Consequences
+* Positive: CBOM output is deterministic, auditable, and compliant with CycloneDX 1.6 structure.
+* Positive: Evidence traceability maintained — every CBOM component can be traced back to scanner findings.
+* Positive: No-fabrication ensures CBOM is an accurate reflection of what was discovered.
+* Trade-off: Full JSON Schema validation not wired in by default (toolchain concern, not application concern).
+
+#### Related Modules / Data Contracts
+* `core/cbom_generator/` (mapper, models, serializer, validator), `docs/06_API_AND_DATA_CONTRACTS.md` Section 3.
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
 | :--- | :--- | :--- | :--- |
 | **DEC-001** | Living Documentation & Single Source of Truth Governance | 2026-08-29 | Accepted |
 | **DEC-002** | Modular Pipeline with Canonical Normalization Layer | 2026-08-29 | Accepted |
-| **DEC-003** | Adoption of Mosca’s Inequality ($X+Y > Z$) for Quantum Migration Urgency | 2026-08-29 | Accepted |
+| **DEC-003** | Adoption of Mosca's Inequality ($X+Y > Z$) for Quantum Migration Urgency | 2026-08-29 | Accepted |
 | **DEC-004** | Alignment with CycloneDX 1.6+ CBOM and NIST FIPS 203/204/205 Standards | 2026-08-29 | Accepted |
 | **DEC-005** | Discovery Layer Subsystem Architecture & ScannerRouter Pattern | 2026-08-29 | Accepted |
 | **DEC-006** | Promotion of Container and Binary Scanners to Phase 1 Discovery Subsystem | 2026-08-29 | Accepted |
@@ -435,3 +472,4 @@ Orthogonal classification prevents incorrect correlations (e.g., "it's classical
 | **DEC-010** | Deterministic Normalization Architecture, Multi-Signal Aggregation, and RFC 4122 UUIDv5 Identity Strategy | 2026-09-03 | Accepted |
 | **DEC-011** | Additive CryptoAsset Schema Extension for Classification Fields | 2026-09-03 | Accepted |
 | **DEC-012** | Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy | 2026-09-03 | Accepted |
+| **DEC-013** | CycloneDX 1.6 CBOM Generation Architecture | 2026-09-04 | Accepted |

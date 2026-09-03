@@ -38,7 +38,7 @@ Canonical CryptoAsset Models (v1.2.0)               [✓ IMPLEMENTED - Phase 2]
         ↓
 Classification & Parameter Enrichment               [✓ IMPLEMENTED - Phase 2]
         ↓
-CBOM Generation (CycloneDX 1.6 JSON/XML)            [○ PLANNED - Phase 2]
+CBOM Generation (CycloneDX 1.6 JSON/XML)            [✓ IMPLEMENTED - Phase 2]
         ↓
 Quantum Risk Engine (Deterministic Scoring)         [○ PLANNED - Phase 3]
         ↓
@@ -108,11 +108,19 @@ CURRENT PHASE:
 Phase 2 — Core Normalization, Classification, & CBOM Generation (IN PROGRESS)
 
 CURRENT SUB-PHASE:
-Milestones 2.1 & 2.2 Complete — Normalization, Canonical CryptoAsset Modeling, & Cryptographic Classification
-Next: Milestone 2.3 — CycloneDX 1.6+ CBOM Serializer (core.cbom_generator)
+Milestones 2.1, 2.2 & 2.3 Complete — Normalization, Classification, & CycloneDX 1.6 CBOM Generator
+Next: Phase 3 — Quantum Risk Engine, Mosca Engine, PQC Recommendation Engine
 
 LAST COMPLETED:
-Phase 2 Classification Subsystem & Normalization Hardening (2026-09-03):
+Phase 2 Milestone 2.3 CBOM Generator (2026-09-04):
+  - Implemented core/cbom_generator/__init__.py (public API: CBOMSerializer, CBOMValidator)
+  - Implemented core/cbom_generator/models.py (CDXBom, CDXComponent, CDXCryptoProperties, CDXAlgorithmProperties, CDXEvidence, CDXProperty)
+  - Implemented core/cbom_generator/mapper.py (CryptoAsset → CDXComponent; PrimitiveType → CDX primitive routing; no-fabrication policy)
+  - Implemented core/cbom_generator/serializer.py (CBOMSerializer.to_json(), to_xml(), to_json_dict(), build_bom())
+  - Implemented core/cbom_generator/validator.py (structural validator: required fields, enum values, bom-ref uniqueness, nistQuantumSecurityLevel)
+  - Created tests/test_core/test_cbom_generator.py (116 tests, 92% CBOM coverage)
+  - Full test suite: 272 passed, 0 failed
+  - Updated docs/04_MODULES.md, docs/07_PROGRESS.md, docs/08_DECISIONS_AND_LOG.md, PROJECT_CONTEXT.md
   - Fixed AES key-size raw symbol injection bug in algorithm_normalizer.py + added 3 regression tests
   - Extended CryptoAsset schema to v1.2.0 with 5 classification fields + updated to_api_dict() (DEC-011)
   - Implemented core/classification/models.py (ClassicalSecurityStatus, QuantumSecurityStatus, ClassificationResult)
@@ -129,10 +137,10 @@ Phase 1 Discovery Layer Implementation & Validation:
   - BaseScanner, ScannerRouter, registries, Repository/Container/Binary scanners, 77 tests (289 real findings)
 
 CURRENTLY IMPLEMENTING:
-Phase 2 Milestone 2.2 COMPLETE. Transitioning to Milestone 2.3 CBOM Serializer.
+Phase 3 Milestone 3.1: Quantum Risk Engine (core.risk_engine).
 
 NEXT LOGICAL STEP:
-Phase 2 Milestone 2.3: CycloneDX 1.6+ JSON & XML CBOM Serializer (core.cbom_generator).
+Phase 3 Milestone 3.1: Deterministic Quantum Risk Scoring Engine (core.risk_engine).
 ```
 
 ---
@@ -164,10 +172,14 @@ Phase 2 Milestone 2.3: CycloneDX 1.6+ JSON & XML CBOM Serializer (core.cbom_gene
   * `ConfidenceAggregator`: monotonic corroboration formula with detailed rationale generation.
   * `Normalizer`: public pipeline entrypoint and quantitative statistics calculator.
   * `ClassificationEngine`: deterministic classical (SECURE/WEAK/BROKEN/UNKNOWN) and quantum (SAFE/DEGRADED/CRITICAL/UNKNOWN) classification with Shor/Grover/BHT models and no-fabrication policy.
-* **Test Suite (`tests/`):** 153 passed tests (1 skipped), 85% core coverage, 82% overall codebase coverage.
+  * **CycloneDX 1.6 CBOM Generator (`core/cbom_generator/`):**
+  * `CBOMSerializer`: CryptoAsset[] → CycloneDX 1.6 JSON (to_json, to_json_dict) and XML (to_xml) with deterministic mode.
+  * `CBOMValidator`: Structural validator (required fields, assetType/primitive enums, bom-ref uniqueness, serialNumber, nistQuantumSecurityLevel bounds).
+  * `mapper.py`: PrimitiveType → CDX primitive routing, no-fabrication display name, qnetra: namespaced evidence properties.
+  * `models.py`: CDXBom, CDXComponent, CDXAlgorithmProperties, CDXEvidence, CDXProperty dataclasses.
+* **Test Suite (`tests/`):** 272 passed tests, 92% CBOM coverage, 85%+ core coverage overall.
 
 ### ○ PLANNED (Upcoming Phases)
-* **Phase 2 Remaining:** `core.cbom_generator` (CycloneDX 1.6 JSON/XML serialization).
 * **Phase 3:** `core.risk_engine` (Deterministic risk scoring), `core.mosca_engine` ($X+Y > Z$ simulation), `core.recommendation_engine` (NIST FIPS 203/204/205 mapping).
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).
 

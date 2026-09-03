@@ -16,7 +16,7 @@
 | **Binary Scanner** | `scanners.binary` | **Implemented** | High (P0) | Static ELF/PE binary scanner (lief symbol tables, string patterns, multi-signal correlation) |
 | **Normalization Layer** | `core.normalization` | **Implemented** | High (P0) | Translating raw findings into canonical `CryptoAsset` models (UUIDv5 identity, confidence aggregation) |
 | **Classification Engine** | `core.classification` | **Implemented** | High (P0) | Deterministic classical + quantum threat classification of `CryptoAsset` objects |
-| **CBOM Generator** | `core.cbom_generator` | Planned | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts |
+| **CBOM Generator** | `core.cbom_generator` | **Implemented** | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts from `CryptoAsset` list |
 | **Quantum Risk Engine** | `core.risk_engine` | Planned | High (P0) | Computing deterministic quantum vulnerability risk scores |
 | **Mosca Assessment Engine** | `core.mosca_engine` | Planned | High (P0) | Simulating $X+Y > Z$ migration timelines and HNDL risk |
 | **PQC Recommendation Engine**| `core.recommendation_engine`| Planned | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements |
