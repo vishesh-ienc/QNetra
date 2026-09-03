@@ -413,8 +413,13 @@ They correspond to `CryptoAsset` defined in `docs/06_API_AND_DATA_CONTRACTS.md`.
         "end_line": 31,
         "snippet": "key = RSA.generate(2048, e=65537)"
       },
+      "classical_security_status": "SECURE",
       "quantum_vulnerable": true,
       "quantum_threat_type": "SHOR_POLYNOMIAL_BREAK",
+      "quantum_security_status": "CRITICAL",
+      "effective_classical_security_bits": 112,
+      "effective_quantum_security_bits": null,
+      "classification_notes": "[HIGH] Classical [SECURE]: RSA-2048 classical security: SECURE (~112 bits equivalent, NIST SP 800-57 Table 2). | Quantum [CRITICAL]: RSA is vulnerable to Shor's algorithm (polynomial-time quantum attack).",
       "confidence_score": 0.95,
       "confidence_level": "VERY_HIGH",
       "risk_score": 91,

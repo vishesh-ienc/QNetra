@@ -5,31 +5,26 @@
 
 ---
 
-# 07 — Project Progress & Task Tracker
-
-> **DOCUMENT PURPOSE:** The living, real-time status tracker for the **QNetra** project.
-> Every AI agent and developer must consult this document before starting work and update it upon task completion.
-
----
-
 ## Current Project Phase
 
-**Phase 1: Cryptographic Discovery Layer & Multi-Target Scanners** (Completed)  
-**Next Phase: Phase 2: Core Normalization, Classification, & CBOM Generation**
+**Phase 2: Core Normalization, Classification, & CBOM Generation** (In Progress)  
+* **Milestone 2.1 (Complete):** Core Normalization & Canonical CryptoAsset Generation (96 tests passing, 82% coverage).  
+* **Milestone 2.2 (Complete):** Cryptographic & Quantum Threat Classification (`core.classification`) — 153 tests, 85% core coverage.  
+* **Milestone 2.3 (Next):** CycloneDX 1.6+ CBOM Serializer (`core.cbom_generator`).
 
 ---
 
 ## Current Focus
 
-Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding` v1.1.0 to canonical `CryptoAsset`), `core.classification`, and `core.cbom_generator` (CycloneDX 1.6+ JSON/XML serializer).
+Implementing Phase 2 Milestone 2.3: CycloneDX 1.6+ CBOM Serializer. Classification complete.
 
 ---
 
 ## Overall Status
 
-* **Status:** 🟢 **On Track** (Phase 1 Complete — 77/77 Tests Passing, 80% Coverage)
+* **Status:** 🟢 **On Track** (Phase 1 Complete, Phase 2 Normalization Milestone Complete — 96/96 Tests Passing, 82% Coverage)
 * **Active Blockers:** None
-* **Next Phase Transition:** Phase 2 — Normalization, Classification, Quantum Risk, & CBOM Generation
+* **Next Phase Transition:** Phase 2 Classification & CycloneDX 1.6 CBOM Generation
 
 ---
 
@@ -58,45 +53,58 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
   * [x] Python AST analyzer (`python_analyzer.py`) with import tracking, API call detection, and parameter extraction.
   * [x] JavaScript/TypeScript analyzer (`javascript_analyzer.py`) with require/import and API matching.
   * [x] Java analyzer (`java_analyzer.py`) with JCA/JCE `getInstance()` factory parsing.
-  * [x] C/C++ analyzer (`cpp_analyzer.py`) with OpenSSL EVP and include parsing.
-  * [x] Explainable multi-signal confidence model (`confidence.py`).
-* [x] **Container Scanner (`scanners/container`):**
-  * [x] Filesystem shared library inspector (`/usr/lib`, `/lib64`, `.so` detection).
-  * [x] Package manager metadata inspector (dpkg `/var/lib/dpkg/status`, pip `site-packages`, npm `node_modules`).
-  * [x] SSL/TLS configuration and certificate inspector (`/etc/ssl`, `/etc/pki`).
+  * [x] C/C++ analyzer (`cpp_analyzer.py`) with `#include` and OpenSSL EVP call matching.
+  * [x] Multi-signal confidence engine (`confidence.py`).
+* [x] **Container Filesystem Scanner (`scanners/container`):**
+  * [x] Shared library inspection (`filesystem.py`).
+  * [x] Package manager metadata inspection (`package_inspector.py`).
+  * [x] SSL/TLS certificate and key inspection.
 * [x] **Binary Scanner (`scanners/binary`):**
-  * [x] Binary format detection (`format_detector.py`) for ELF, PE, Mach-O, Archive.
-  * [x] Printable ASCII string extractor (`string_analyzer.py`) with library version strings and TLS cipher suites.
-  * [x] Static symbol table parsing via `lief` (`symbol_inspector.py`) with graceful fallback.
-  * [x] Multi-signal correlation, deduplication, and library consolidation (`correlation.py`).
-* [x] **Sample Fixtures & Validation Suite:**
-  * [x] Created multi-language sample suites in `samples/repository_samples/` (Python, JS, Java, C).
-  * [x] Built test suite (`tests/`) spanning framework, repository, container, binary, and integration tests.
-  * [x] Executed full test suite: 77/77 tests passing, 80% total codebase coverage.
-* [x] **Phase 1 Manual Validation & Demonstration (2026-09-02):**
-  * [x] Created synthetic container filesystem fixture (`samples/container_sample/`) with shared libs (libssl, libcrypto, libsodium), dpkg metadata, pip packages, npm packages, and SSL certificate.
-  * [x] Created synthetic ELF binary fixture with embedded crypto strings (`samples/binary_samples/sample_crypto_binary.elf`) using `scripts/generate_binary_fixture.py`.
-  * [x] Implemented orchestration demo script (`scripts/demo_scan.py`) exercising all 3 real Phase 1 scanners.
-  * [x] Executed full scanner demonstration — 289 raw findings across all fixtures (Python:133, JS:44, Java:42, C/C++:50, Container:16, Binary:4).
-  * [x] Generated `raw_findings.md` from actual scanner output — no manual editing.
+  * [x] Magic-byte binary format detector (`format_detector.py`).
+  * [x] ASCII string and PEM block analyzer (`string_analyzer.py`).
+  * [x] Static symbol table inspector with `lief` and graceful fallback (`symbol_inspector.py`).
+  * [x] Multi-signal correlation and deduplication (`correlation.py`).
+* [x] **Automated Testing & Demonstration:**
+  * [x] 77 unit & integration tests passing across all discovery modules.
+  * [x] Executed full scanner demonstration — 289 raw findings across all fixtures.
+  * [x] Generated `raw_findings.md` from actual scanner output.
+
+### Phase 2: Normalization, Classification, & CBOM Generation
+* [x] **Normalization Subsystem (`core/normalization/`):**
+  * [x] Canonical `CryptoAsset` domain model (`core/models.py`) with complete audit evidence preservation.
+  * [x] Algorithm name canonicalizer & parameter extractor (`core/normalization/algorithm_normalizer.py`).
+  * [x] Multi-signal finding deduplicator & aggregator (`core/normalization/deduplicator.py`).
+  * [x] Deterministic RFC 4122 UUIDv5 identity generator using `asset.qnetra.io` namespace.
+  * [x] Explainable, monotonic confidence aggregator (`core/normalization/confidence_aggregator.py`).
+  * [x] Normalization orchestrator & statistics calculator (`core/normalization/normalizer.py`).
+  * [x] Normalization test suite: 19 unit & integration tests (`tests/test_core/test_normalization.py`).
+  * [x] Real data validation: processed 289 raw findings into 142 canonical assets with 147 merges.
+
+---
+
+* [x] **Classification Subsystem (`core/classification/`):** ← **COMPLETE (Milestone 2.2)**
+  * [x] Normalization bug fix: removed AES key-size injection from raw-symbol substring matching (`algorithm_normalizer.py`).
+  * [x] AES key-size regression tests: 3 new tests in `TestNormalizationRegressions` class.
+  * [x] CryptoAsset schema extension: 5 new Optional classification fields + updated `to_api_dict()` (DEC-011).
+  * [x] `core/classification/models.py`: `ClassicalSecurityStatus`, `QuantumSecurityStatus`, `ClassificationResult` dataclass.
+  * [x] `core/classification/knowledge.py`: NIST SP 800-57 tables, ECC curve profiles, Grover formula, BHT hash profiles.
+  * [x] `core/classification/classifier.py`: `ClassificationEngine.classify()` and `classify_one()`, routing by primitive_type, per-family classifiers.
+  * [x] No-fabrication policy: `None` params → `None` estimates. Shor → `effective_quantum_security_bits=None`.
+  * [x] 54-test classification suite (`tests/test_core/test_classification.py`), 153/154 tests passing.
+  * [x] Pipeline validation: 289 RawFindings → 147 CryptoAssets → all classified, risk fields untouched.
+  * [x] Architecture decisions DEC-011 and DEC-012 recorded.
 
 ---
 
 ## Next Tasks (Phase 2 Roadmap)
 
-1. **Normalization Engine (`core/normalization`):**
-   * [ ] Translate `RawFinding` v1.1.0 into canonical `CryptoAsset` models.
-   * [ ] Deduplicate multi-scanner findings pointing to the same logical asset.
-2. **Classification Engine (`core/classification`):**
-   * [ ] Enrich `CryptoAsset` with quantum threat vectors (Shor, Grover, Classically Broken).
-   * [ ] Classify effective security bits pre- and post-quantum.
-3. **CBOM Generator (`core/cbom_generator`):**
+1. **CBOM Generator (`core/cbom_generator`):**
    * [ ] Implement CycloneDX 1.6+ JSON and XML CBOM serializers.
    * [ ] Validate generated CBOM artifacts against CycloneDX 1.6 JSON Schema.
-4. **Quantum Risk & Mosca Engines (`core/risk_engine`, `core/mosca_engine`):**
+2. **Quantum Risk & Mosca Engines (`core/risk_engine`, `core/mosca_engine`):**
    * [ ] Multi-factor risk scoring algorithm implementation.
    * [ ] Mosca timeline simulation calculator ($X+Y > Z$).
-5. **PQC Recommendation Engine (`core/recommendation_engine`):**
+3. **PQC Recommendation Engine (`core/recommendation_engine`):**
    * [ ] Algorithmic replacement mapping to NIST FIPS 203/204/205 standards.
 
 ---
@@ -113,8 +121,10 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
 
 * **Milestone 0 (Complete):** Repository initialization and living documentation framework established.
 * **Milestone 1 (Complete):** Discovery Layer foundation, Repository, Container, and Binary scanners built and verified (77 tests, 80% coverage).
-* **Milestone 2 (Next):** Standards-compliant CycloneDX 1.6 CBOM generator and deterministic Quantum Risk Engine.
-* **Milestone 3:** Mosca timeline assessment engine and NIST PQC recommendation system.
+* **Milestone 2.1 (Complete):** Normalization Subsystem & canonical CryptoAsset models implemented (96 tests, 82% coverage).
+* **Milestone 2.2 (Complete):** Cryptographic & Quantum Threat Classification — ClassificationEngine, 54 new tests, 153/154 total passing, 85% core coverage.
+* **Milestone 2.3 (Next):** CycloneDX 1.6+ CBOM Serializer (`core.cbom_generator`).
+* **Milestone 3:** Deterministic Quantum Risk Scoring, Mosca timeline assessment engine, and NIST PQC recommendation system.
 * **Milestone 4:** Full-stack integration with FastAPI backend and interactive web dashboard.
 * **Milestone 5:** End-to-end testing, audit report generation (PDF/CSV), and presentation polish.
 
@@ -124,6 +134,9 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
 
 | Timestamp (ISO) | Author | Change Summary | Affected Files |
 | :--- | :--- | :--- | :--- |
+| 2026-09-03T23:33:00 | AI Agent | Implemented Phase 2 Milestone 2.2: Classification Engine, normalization bug fix, schema extension, 54 new tests (153 total, 85% core coverage) | `core/classification/*`, `core/models.py`, `core/normalization/algorithm_normalizer.py`, `tests/test_core/*`, `docs/*`, `current_prompt_update.md` |
+| 2026-09-03T22:55:00 | AI Agent | Implemented Phase 2 Normalization & CryptoAsset generation (models, normalizer, deduplicator, confidence aggregator, 19 tests, 82% coverage) | `core/*`, `tests/test_core/*`, `docs/*`, `current_status.md`, `current_prompt_update.md` |
+| 2026-09-03T22:45:00 | AI Agent | Established current_prompt_update.md and codified RULE-012 in PROJECT_RULES.md & AGENTS.md | `current_prompt_update.md`, `PROJECT_RULES.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
 | 2026-09-02T10:21:00 | AI Agent | Phase 1 manual validation: created container/binary fixtures, demo script, and generated raw_findings.md (289 real findings) | `samples/container_sample/*`, `samples/binary_samples/*`, `scripts/*`, `raw_findings.md`, `current_status.md`, `docs/07_PROGRESS.md` |
 | 2026-09-01T14:57:00 | AI Agent | Created current_status.md living status tracker and registered it in AGENTS.md + PROJECT_CONTEXT.md | `current_status.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
 | 2026-08-29T18:25:00 | AI Agent | Implemented Discovery Layer foundation, Repository Scanner, Container Scanner, Binary Scanner, Registries, and 77-test suite | `scanners/*`, `samples/*`, `tests/*`, `docs/*` |
@@ -131,4 +144,4 @@ Transitioning to Phase 2: Building `core.normalization` (translating `RawFinding
 
 ---
 
-**Last Updated:** 2026-09-02T10:21:00+05:30
+**Last Updated:** 2026-09-03T23:33:00+05:30

@@ -51,6 +51,7 @@ Before executing any code changes or proposing designs, every agent must execute
 
 ### Discovery Documents Reference:
 * High-density status & architecture snapshot: [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md)
+* Per-prompt implementation summary: [current_prompt_update.md](current_prompt_update.md)
 * Comprehensive current project status & health: [current_status.md](current_status.md)
 * Active engineering constraints & governance: [PROJECT_RULES.md](PROJECT_RULES.md)
 * Project mission & front door: [README.md](README.md)
@@ -86,12 +87,13 @@ While implementing or refactoring code, every agent must:
 > **Continuous Documentation Responsibility:**
 > You must continuously evaluate the impact of your changes on the project documentation and handoff files.
 > **DO NOT wait for the user to ask for documentation updates.**
-> Updating documentation and maintaining `PROJECT_CONTEXT.md` is an integral requirement of task completion.
+> Updating documentation, maintaining `current_prompt_update.md` on every single prompt (RULE-012), and maintaining `PROJECT_CONTEXT.md` is an integral requirement of task completion.
 
 Whenever any change is made, evaluate the following checklist:
 
 | Reflection Question | If YES, Action Required | Target Document |
 | :--- | :--- | :--- |
+| *Did you complete any work in this prompt turn?* | **Mandatory per-prompt summary (RULE-012)** | [current_prompt_update.md](current_prompt_update.md) |
 | *Did this change advance implementation, complete a milestone, or change next steps?* | **Update current state, implemented list, and next priorities** | [current_status.md](current_status.md), [PROJECT_CONTEXT.md](PROJECT_CONTEXT.md) & [docs/07_PROGRESS.md](docs/07_PROGRESS.md) |
 | *Did this change affect system scope or boundaries?* | Update scope, requirements, or traceability | [docs/01_PROJECT_SCOPE.md](docs/01_PROJECT_SCOPE.md) |
 | *Did this change modify layers, components, or boundaries?* | Update architecture description, diagrams & change history | [docs/02_SYSTEM_ARCHITECTURE.md](docs/02_SYSTEM_ARCHITECTURE.md) |
@@ -115,7 +117,7 @@ flowchart TD
     S2 --> S3["3. Plan<br/>(Design changes & identify affected docs)"]
     S3 --> S4["4. Implement<br/>(Execute focused, rule-compliant code)"]
     S4 --> S5["5. Validate<br/>(Run pytest test suite & check contracts)"]
-    S5 --> S6["6. Document<br/>(Update PROJECT_CONTEXT.md & docs/)"]
+    S5 --> S6["6. Document<br/>(Update current_prompt_update.md, CONTEXT, docs/)"]
     S6 --> S7["7. Report<br/>(Provide concise summary of changes)"]
 ```
 
@@ -141,8 +143,16 @@ flowchart TD
 * Ensure no regressions were introduced to existing modules.
 
 ### Step 6: Document
+* **Mandatory (RULE-012):** Always update/overwrite `current_prompt_update.md` with the summary of actions taken and files touched in this prompt.
 * Immediately update all affected documentation files identified in the Documentation Matrix.
 * Update `docs/07_PROGRESS.md` with completed items and updated next steps.
+
+### Step 7: Report
+* Summarize changes concisely for the user:
+  * What code changed and why
+  * Which documentation files were updated
+  * Validation/tests executed
+  * Next recommended steps
 
 ### Step 7: Report
 * Summarize changes concisely for the user:

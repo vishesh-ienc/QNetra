@@ -14,9 +14,9 @@
 | **Repository Scanner** | `scanners.repository` | **Implemented** | High (P0) | Multi-language source code scanner (Python AST, JS, Java, C/C++ analyzers) |
 | **Container Scanner** | `scanners.container` | **Implemented** | High (P0) | Extracted container filesystem, shared lib, package metadata (dpkg, npm, pip), & TLS config scanner |
 | **Binary Scanner** | `scanners.binary` | **Implemented** | High (P0) | Static ELF/PE binary scanner (lief symbol tables, string patterns, multi-signal correlation) |
-| **Normalization Layer** | `core.normalization` | Planned | High (P0) | Translating raw findings into canonical `CryptoAsset` models |
+| **Normalization Layer** | `core.normalization` | **Implemented** | High (P0) | Translating raw findings into canonical `CryptoAsset` models (UUIDv5 identity, confidence aggregation) |
+| **Classification Engine** | `core.classification` | **Implemented** | High (P0) | Deterministic classical + quantum threat classification of `CryptoAsset` objects |
 | **CBOM Generator** | `core.cbom_generator` | Planned | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts |
-| **Classification Engine** | `core.classification` | Planned | High (P0) | Categorizing primitives, algorithms, and key strengths |
 | **Quantum Risk Engine** | `core.risk_engine` | Planned | High (P0) | Computing deterministic quantum vulnerability risk scores |
 | **Mosca Assessment Engine** | `core.mosca_engine` | Planned | High (P0) | Simulating $X+Y > Z$ migration timelines and HNDL risk |
 | **PQC Recommendation Engine**| `core.recommendation_engine`| Planned | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements |
@@ -128,16 +128,18 @@
 * **Path:** `core/normalization`
 * **Purpose:** Converts varied scanner outputs into the standard canonical `CryptoAsset` schema.
 * **Responsibility:**
-  * Normalize algorithm naming variants (e.g. `RSA-2048`, `rsa_2048`, `PKCS1_OAEP` -> standard canonical representation).
-  * Deduplicate identical findings from multi-pass scanners.
-  * Synthesize metadata (file location, component origin, key size, curve).
+  * Normalize algorithm naming variants (e.g. `AES_256_GCM`, `AES/GCM/NoPadding` -> canonical `AES-256-GCM`).
+  * Group and deduplicate findings across multi-pass scanners and source locations (`deduplicator.py`).
+  * Deterministically compute RFC 4122 UUIDv5 canonical asset IDs using the `asset.qnetra.io` namespace.
+  * Formulate multi-signal aggregated confidence scores with transparent rationales (`confidence_aggregator.py`).
+  * Preserve complete audit traceability to all supporting raw findings (`supporting_finding_ids`, `supporting_findings`).
 * **Inputs:** `List[RawFinding]`.
 * **Outputs:** `List[CryptoAsset]`.
-* **Dependencies:** None (pure data transformation).
+* **Dependencies:** Standard library `uuid`, `re`, `pydantic`.
 * **Related Data Contracts:** `RawFinding`, `CryptoAsset` ([docs/06_API_AND_DATA_CONTRACTS.md](docs/06_API_AND_DATA_CONTRACTS.md)).
-* **Status:** Planned
+* **Status:** Implemented (`v1.0.0`)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_normalization.py` (alias resolution, deduplication tests).
+* **Tests:** `tests/test_core/test_normalization.py` (19 tests, 82% coverage).
 
 ---
 

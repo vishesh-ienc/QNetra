@@ -121,6 +121,14 @@ Every rule in this document follows this structure:
 * **Reason:** Ensures long-term context retention across a multi-person hackathon team and subsequent development phases.
 * **Enforcement:** Code review gate.
 
+### RULE-012 — Mandatory Per-Prompt Update File (current_prompt_update.md)
+* **Date Added:** 2026-09-03
+* **Category:** Documentation
+* **Status:** Active
+* **Rule:** At the conclusion of every single user prompt and agent turn, the file [`current_prompt_update.md`](current_prompt_update.md) at the repository root MUST be updated/overwritten with a concise, structured summary of the current prompt's implementation. This includes prompt metadata, summary of implementation actions, table of modified/created files, test and verification results, and context handoff for the next prompt.
+* **Reason:** Ensures absolute real-time visibility into the exact changes made in each prompt turn without relying on volatile chat logs or manual diff inspections.
+* **Enforcement:** Mandatory self-verification check on every agent turn before reporting completion to the user.
+
 ---
 
 ## Testing Rules
@@ -164,3 +172,4 @@ Every rule in this document follows this structure:
 | Date | Rule ID | Action | Summary | Author |
 | :--- | :--- | :--- | :--- | :--- |
 | 2026-08-29 | RULE-001 to RULE-011 | Created | Initial repository engineering and governance rules established | System Initialization |
+| 2026-09-03 | RULE-012 | Created | Mandated maintenance of current_prompt_update.md on every prompt turn | System Governance |

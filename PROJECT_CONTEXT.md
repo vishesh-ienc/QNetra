@@ -32,13 +32,13 @@ Cryptographic Discovery Layer                       [✓ IMPLEMENTED - Phase 1]
         ↓
 Raw Findings (RawFinding v1.1.0 Contract)           [✓ IMPLEMENTED - Phase 1]
         ↓
-Normalization & Deduplication                       [○ PLANNED - Phase 2]
+Normalization & Deduplication                       [✓ IMPLEMENTED - Phase 2]
         ↓
-Canonical CryptoAsset Models                        [○ PLANNED - Phase 2]
+Canonical CryptoAsset Models (v1.2.0)               [✓ IMPLEMENTED - Phase 2]
+        ↓
+Classification & Parameter Enrichment               [✓ IMPLEMENTED - Phase 2]
         ↓
 CBOM Generation (CycloneDX 1.6 JSON/XML)            [○ PLANNED - Phase 2]
-        ↓
-Classification & Parameter Enrichment               [○ PLANNED - Phase 2]
         ↓
 Quantum Risk Engine (Deterministic Scoring)         [○ PLANNED - Phase 3]
         ↓
@@ -79,8 +79,11 @@ FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
 └─────────────────────────────────────┬──────────────────────────────────┘
                                       ▼
 ┌────────────────────────────────────────────────────────────────────────┐
-│ 2. CANONICAL NORMALIZATION LAYER (core.normalization — Phase 2)        │
-│    Translates RawFinding -> Canonical CryptoAsset Schema                │
+│ 2. CANONICAL NORMALIZATION LAYER (core.normalization — Phase 2 Done)   │
+│    Translates RawFinding -> Canonical CryptoAsset Schema (UUIDv5)      │
+│    - AlgorithmNormalizer: JCA, EVP, aliases, parameters               │
+│    - Deduplicator: Proximity & component clustering                   │
+│    - ConfidenceAggregator: Monotonic S_max + bonus formula            │
 └─────────────────────────────────────┬──────────────────────────────────┘
                                       ▼
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -102,40 +105,41 @@ FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
 
 ```text
 CURRENT PHASE:
-Phase 1 — Cryptographic Discovery Layer (COMPLETED & VALIDATED)
+Phase 2 — Core Normalization, Classification, & CBOM Generation (IN PROGRESS)
 
 CURRENT SUB-PHASE:
-Transitioning to Phase 2 — Core Normalization, Classification, & CBOM Generation
+Milestones 2.1 & 2.2 Complete — Normalization, Canonical CryptoAsset Modeling, & Cryptographic Classification
+Next: Milestone 2.3 — CycloneDX 1.6+ CBOM Serializer (core.cbom_generator)
 
 LAST COMPLETED:
-Phase 1 Validation & Manual Demonstration (2026-09-02):
-  - Created synthetic container_sample/ and binary_samples/ test fixtures
-  - Implemented scripts/demo_scan.py orchestration demonstration
-  - Ran all 3 Phase 1 scanners against controlled cryptographic fixtures
-  - Generated raw_findings.md with 289 actual RawFinding records
-  - Verified 77/77 tests still passing after all additions
-  - Confirmed scanner correctness across Python, JS, Java, C/C++, Container FS, ELF binary
+Phase 2 Classification Subsystem & Normalization Hardening (2026-09-03):
+  - Fixed AES key-size raw symbol injection bug in algorithm_normalizer.py + added 3 regression tests
+  - Extended CryptoAsset schema to v1.2.0 with 5 classification fields + updated to_api_dict() (DEC-011)
+  - Implemented core/classification/models.py (ClassicalSecurityStatus, QuantumSecurityStatus, ClassificationResult)
+  - Implemented core/classification/knowledge.py (NIST SP 800-57 tables, ECC curve profiles, Grover formula, BHT hash profiles)
+  - Implemented core/classification/classifier.py (ClassificationEngine with orthogonal dimensions & no-fabrication policy)
+  - Created 54-test classification suite; 153/154 total tests passing, 85% core coverage
+  - Validated full pipeline: 289 RawFindings -> 147 CryptoAssets -> all classified (65 vuln, 38 safe, 44 unknown)
+  - Updated docs/04, docs/05, docs/06, docs/07, docs/08 (DEC-011, DEC-012), docs/10, current_status, PROJECT_CONTEXT
 
 PREVIOUSLY COMPLETED:
-Phase 1 Discovery Layer Implementation:
-  - Discovery Framework Core (BaseScanner, ScannerRouter, models.py)
-  - Curated Knowledge Registries (Algorithms, Libraries, API Maps, Patterns, Symbols)
-  - 3 Discovery Scanners (RepositoryScanner, ContainerScanner, BinaryScanner)
-  - 77 Automated Tests across 5 test suites (80% code coverage)
-  - Full documentation synchronization across docs/01 through docs/08
+Phase 2 Normalization & CryptoAsset Generation (2026-09-03):
+  - Canonical CryptoAsset domain model, AlgorithmNormalizer, Deduplicator (UUIDv5), ConfidenceAggregator
+Phase 1 Discovery Layer Implementation & Validation:
+  - BaseScanner, ScannerRouter, registries, Repository/Container/Binary scanners, 77 tests (289 real findings)
 
 CURRENTLY IMPLEMENTING:
-Phase 2 Foundation: Normalization Engine (core.normalization) & CBOM Generator
+Phase 2 Milestone 2.2 COMPLETE. Transitioning to Milestone 2.3 CBOM Serializer.
 
 NEXT LOGICAL STEP:
-Implement core/normalization/ to convert RawFinding v1.1.0 into canonical CryptoAsset records.
+Phase 2 Milestone 2.3: CycloneDX 1.6+ JSON & XML CBOM Serializer (core.cbom_generator).
 ```
 
 ---
 
 ## 5. What Is Already Implemented
 
-### ✓ IMPLEMENTED & TESTED (Phase 1)
+### ✓ IMPLEMENTED & TESTED (Phase 1 & Phase 2 Milestone 2.1)
 * **Framework Core (`scanners/framework`):** `BaseScanner` ABC, `ScannerRouter` with magic-byte dispatch, `ScanTarget`, `ScanResult`, `ScanOptions`, `ScanStatistics`, `RawFinding` (v1.1.0 with float confidence and `to_v1_dict()`).
 * **Cryptographic Knowledge Registries (`scanners/registry`):**
   * `crypto_algorithms.py`: 30+ algorithms with quantum threat classification and key boundaries.
@@ -152,10 +156,18 @@ Implement core/normalization/ to convert RawFinding v1.1.0 into canonical Crypto
   * Multi-signal confidence engine: Deterministic, explainable scoring (0.0 to 1.0).
 * **Container Scanner (`scanners/container`):** Shared library inspection (`/usr/lib`, `/lib64`), package manager parsing (`dpkg`, `pip`, `npm`), and TLS config/cert inspection (`/etc/ssl`, `/etc/pki`).
 * **Binary Scanner (`scanners/binary`):** Magic-byte format detection (ELF, PE, Mach-O), printable ASCII string extraction, static symbol table parsing via `lief`, and multi-signal finding correlation.
-* **Test Suite (`tests/`):** 77 passed tests, 80% total code coverage.
+* **Core Normalization & Classification Engines (`core/`, `core/normalization/`, `core/classification/`):**
+  * `CryptoAsset` (v1.2.0), `PrimitiveType`, `SupportingFindingEvidence` models with `to_api_dict()` JSON serialization.
+  * `AlgorithmNormalizer`: canonical naming, JCA strings, EVP functions, curve aliases, and parameter extraction.
+  * `Deduplicator`: deterministic proximity clustering ($\pm 2$ lines) and binary/container component clustering.
+  * Deterministic RFC 4122 UUIDv5 `asset_id` generation under `asset.qnetra.io` namespace.
+  * `ConfidenceAggregator`: monotonic corroboration formula with detailed rationale generation.
+  * `Normalizer`: public pipeline entrypoint and quantitative statistics calculator.
+  * `ClassificationEngine`: deterministic classical (SECURE/WEAK/BROKEN/UNKNOWN) and quantum (SAFE/DEGRADED/CRITICAL/UNKNOWN) classification with Shor/Grover/BHT models and no-fabrication policy.
+* **Test Suite (`tests/`):** 153 passed tests (1 skipped), 85% core coverage, 82% overall codebase coverage.
 
 ### ○ PLANNED (Upcoming Phases)
-* **Phase 2:** `core.normalization` (RawFinding -> CryptoAsset), `core.classification`, `core.cbom_generator` (CycloneDX 1.6 JSON/XML).
+* **Phase 2 Remaining:** `core.cbom_generator` (CycloneDX 1.6 JSON/XML serialization).
 * **Phase 3:** `core.risk_engine` (Deterministic risk scoring), `core.mosca_engine` ($X+Y > Z$ simulation), `core.recommendation_engine` (NIST FIPS 203/204/205 mapping).
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).
 
@@ -167,8 +179,21 @@ Implement core/normalization/ to convert RawFinding v1.1.0 into canonical Crypto
 QNetra/
 │
 ├── PROJECT_CONTEXT.md             ← (THIS FILE) High-density AI agent handoff document
+├── current_prompt_update.md       ← Real-time per-prompt implementation summary (RULE-012)
 ├── current_status.md              ← Comprehensive live status, health metrics & module inventory
 ├── README.md                      ← Project front door, overview, and status badges
+├── AGENTS.md                      ← Persistent operating instructions for AI agents
+├── PROJECT_RULES.md               ← Active engineering constraints and governance rules
+├── requirements.txt               ← Core Python dependencies (pydantic, lief)
+├── core/                          ← Phase 2 Domain models and Normalization Engine
+│   ├── __init__.py                ← Exports CryptoAsset, PrimitiveType, SupportingFindingEvidence
+│   ├── models.py                  ← Canonical CryptoAsset, PrimitiveType, and SupportingEvidence schemas
+│   └── normalization/             ← Normalization Subsystem
+│       ├── __init__.py            ← Exports Normalizer, NormalizationStatistics
+│       ├── normalizer.py          ← Normalizer orchestrator & stats calculator
+│       ├── algorithm_normalizer.py← Algorithm canonicalizer & parameter extractor
+│       ├── deduplicator.py        ← Proximity & component deduplicator + UUIDv5 generator
+│       └── confidence_aggregator.py← Monotonic multi-signal confidence aggregator
 ├── AGENTS.md                      ← Persistent operating instructions for AI agents
 ├── PROJECT_RULES.md               ← Active engineering constraints and governance rules
 ├── requirements.txt               ← Core Python dependencies (pydantic, lief)
@@ -216,7 +241,7 @@ QNetra/
 | `ScanTarget` | Input target envelope | `target_id`, `path`, `target_type`, `options`, `metadata` | Ingestion / Caller |
 | `ScanResult` | Scanner execution output | `scan_id`, `target`, `scanner_name`, `status`, `findings`, `statistics`, `errors` | `scanners.framework` |
 | `RawFinding` (v1.1.0) | Raw discovery evidence | `finding_id`, `scanner_name`, `discovery_method`, `raw_symbol`, `suspected_algorithm`, `artifact_category`, `key_size_hint`, `mode_hint`, `location`, `confidence_score`, `confidence_rationale` | `scanners.*` |
-| `CryptoAsset` *(Phase 2)* | Canonical normalized asset | `asset_id`, `algorithm`, `primitive_type`, `key_length_bits`, `curve`, `mode`, `padding`, `quantum_vulnerable`, `quantum_threat_type` | `core.normalization` |
+| `CryptoAsset` (v1.2.0) | Canonical normalized & classified asset | `asset_id`, `algorithm`, `primitive_type`, `key_length_bits`, `curve`, `mode`, `padding`, `classical_security_status`, `quantum_vulnerable`, `quantum_threat_type`, `quantum_security_status`, `effective_classical_security_bits`, `effective_quantum_security_bits`, `classification_notes` | `core.normalization`, `core.classification` |
 
 *Detailed Schema Definitions:* [`docs/06_API_AND_DATA_CONTRACTS.md`](docs/06_API_AND_DATA_CONTRACTS.md)
 
@@ -242,6 +267,10 @@ QNetra/
 * **DEC-006:** Promotion of Container and Binary Scanners to Phase 1 Discovery Subsystem.
 * **DEC-007:** Integration of `lief` for static binary symbol inspection with pure-Python string fallback.
 * **DEC-008:** Evolution of `RawFinding` to v1.1.0 with quantitative multi-signal confidence and parameter hints.
+* **DEC-009:** API Contract and Frontend Product Specification Frozen Before Phase 4.
+* **DEC-010:** Deterministic Normalization Architecture, Multi-Signal Aggregation, and RFC 4122 UUIDv5 Identity Strategy.
+* **DEC-011:** Additive CryptoAsset Schema Extension for Classification Fields (v1.2.0).
+* **DEC-012:** Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy.
 
 *Full Decision Records:* [`docs/08_DECISIONS_AND_LOG.md`](docs/08_DECISIONS_AND_LOG.md)
 
@@ -272,19 +301,19 @@ QNetra/
 ```text
 RECOMMENDED CONTINUATION POINT (PHASE 2):
 
-1. Implement `core/normalization/normalizer.py`:
-   - Input: List[RawFinding]
-   - Output: List[CryptoAsset]
-   - Tasks: Algorithm name canonicalization, primitive type classification, duplicate merging.
+1. [COMPLETED] Implement `core/normalization/`:
+   - Input: List[RawFinding] -> Output: List[CryptoAsset]
+   - Tests: 22 unit & regression tests under `tests/test_core/test_normalization.py`.
 
-2. Implement `core/classification/classifier.py`:
-   - Tasks: Quantum threat vector assignment (Shor vs Grover), quantum security bit calculation.
+2. [COMPLETED] Implement `core/classification/`:
+   - Tasks: Orthogonal classical & quantum threat classification, effective security bit calculation, no-fabrication policy.
+   - Tests: 54 unit tests under `tests/test_core/test_classification.py`.
 
-3. Implement `core/cbom_generator/cyclonedx.py`:
+3. [NEXT] Implement `core/cbom_generator/`:
    - Tasks: Serialize CryptoAsset list into CycloneDX 1.6+ JSON & XML CBOM formats.
+   - Validation: CycloneDX 1.6 JSON Schema compliance tests.
 
-4. Add Phase 2 Test Suite (`tests/test_core/`):
-   - Normalization accuracy tests, CBOM schema validation against CycloneDX 1.6 schema.
+4. Advance to Phase 3 Intelligence Engines (`core/risk_engine`, `core/mosca_engine`).
 ```
 
 ---
@@ -301,5 +330,5 @@ IF YOU ARE A NEW AI AGENT JOINING QNETRA:
 5. Inspect only the modules relevant to your specific assigned task.
 6. Consult detailed docs in /docs only when needed for specific schema/formula details.
 7. Run the test suite (`python -m pytest tests/`) before and after making changes.
-8. Update current_status.md, PROJECT_CONTEXT.md, and affected docs in /docs upon completing your task.
+8. Update current_prompt_update.md (RULE-012 mandatory on every prompt), current_status.md, PROJECT_CONTEXT.md, and affected docs in /docs upon completing your task.
 ```

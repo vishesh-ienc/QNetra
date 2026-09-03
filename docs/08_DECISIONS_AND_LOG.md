@@ -317,6 +317,108 @@ Before any Phase 4 implementation begins, freeze:
 
 ---
 
+### DEC-010 — Deterministic Normalization Architecture, Multi-Signal Aggregation, and RFC 4122 UUIDv5 Identity Strategy
+
+* **Date:** 2026-09-03
+* **Status:** Accepted
+* **Deciders:** System Architect & Core Team
+
+#### Context
+Phase 1 Discovery emits heterogeneous `RawFinding` records across repositories, container filesystems, and compiled binaries. To support downstream CycloneDX 1.6 CBOM generation and deterministic quantum risk scoring, findings must be canonicalized into `CryptoAsset` models. Furthermore, multiple scanners detecting the same underlying asset (e.g. AST function call + regex match + binary symbol) must be merged into a single canonical asset without losing source evidence or producing non-deterministic asset IDs.
+
+#### Decision
+1. **Canonical Schema & Boundary:** `CryptoAsset` is established in `core/models.py`, preserving complete traceability back to all supporting `RawFinding` records via `supporting_finding_ids` and `supporting_findings`.
+2. **Deduplication Strategy:** Cluster findings by normalized file path, target type, and location. In source code, findings with compatible algorithms and non-conflicting parameters within $\pm 2$ lines are merged. In binaries and container packages, findings in the same file with compatible algorithms merge into that component's asset.
+3. **Deterministic Identity Strategy:** Reject random UUIDs. Generate canonical `CryptoAsset.asset_id` deterministically using RFC 4122 UUIDv5 under the QNetra namespace (`uuid.uuid5(uuid.NAMESPACE_DNS, "asset.qnetra.io")`), hashed from the canonical seed: `path:{file}|line:{anchor}|alg:{alg}|key:{key}|mode:{mode}|curve:{curve}|lib:{lib}`.
+4. **Confidence Aggregation Formula:** When aggregating multiple findings, anchor to $S_{\max} = \max(s_1, \dots, s_n)$ and apply a bounded corroboration factor $B = \sum_{i \neq \max} 0.05 \times s_i$, yielding $C_{\text{agg}} = \min(1.0, S_{\max} + B)$ with an explainable text breakdown.
+
+#### Reasoning
+* Guarantees 100% idempotency across repeated scans.
+* Strictly satisfies RULE-002 (explainability over black-box predictions).
+* Prevents over-normalization of disjoint call sites while eliminating redundant duplicate findings.
+
+#### Alternatives Considered
+* **Random UUIDv4 generation for assets:** Rejected — causes asset ID churn across repeated runs, breaking UI caching and diffing.
+* **Simple average for confidence aggregation:** Rejected — statistically unsound because adding a second corroborating finding would lower confidence below a high-confidence AST detection.
+
+#### Consequences
+* Positive: High confidence stability, reproducible CBOM BOM-refs, zero loss of raw evidence.
+* Constraints: Downstream engines must consume `CryptoAsset` through `core.models`.
+
+#### Related Modules / Data Contracts
+* `core/models.py`, `core/normalization/`, `docs/04_MODULES.md#5-normalization-layer`, `docs/06_API_AND_DATA_CONTRACTS.md#22-cryptoasset-canonical-normalized-cryptographic-asset`.
+
+---
+
+### DEC-011 — Additive CryptoAsset Schema Extension for Classification Fields
+
+* **Date:** 2026-09-03
+* **Status:** Accepted
+* **Deciders:** AI Agent (Phase 2 Milestone 2.2)
+
+#### Context
+Phase 2 Milestone 2.2 (Classification Engine) needed to store classification results on `CryptoAsset` objects. The existing schema had two placeholder fields (`quantum_vulnerable`, `quantum_threat_type`) but lacked the full set needed for classical/quantum security analysis.
+
+#### Decision
+Add five new `Optional` fields to `CryptoAsset` in `core/models.py`:
+  - `classical_security_status: Optional[str]`
+  - `quantum_security_status: Optional[str]`
+  - `effective_classical_security_bits: Optional[int]`
+  - `effective_quantum_security_bits: Optional[int]`
+  - `classification_notes: Optional[str]`
+
+All new fields default to `None` (additive, backward-compatible change). Also update `to_api_dict()` to expose these fields. Contract version bump: `v1.2.0`.
+
+#### Reasoning
+Additive-only changes are backward-compatible with all existing producers and consumers. Fields are `Optional` so no existing serialization breaks. Existing 96 tests remain green. No downstream consumers exist yet (Backend API is Phase 4).
+
+#### Alternatives Considered
+* Separate `ClassificationAnnotation` side object (Rejected: adds unnecessary indirection; CryptoAsset is the canonical unit).
+* Use `metadata` dict for classification fields (Rejected: loses type safety, breaks API contract clarity).
+
+#### Consequences
+* Positive: Classification engine can enrich assets in-place without complex adapter layers.
+* Positive: `to_api_dict()` automatically includes classification for API consumers.
+* Trade-off: `CryptoAsset` model grows; acceptable given it is the canonical output object.
+
+#### Related Modules / Data Contracts
+* `core/models.py` (CryptoAsset), `core/classification/classifier.py`, `docs/06_API_AND_DATA_CONTRACTS.md`.
+
+---
+
+### DEC-012 — Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy
+
+* **Date:** 2026-09-03
+* **Status:** Accepted
+* **Deciders:** AI Agent (Phase 2 Milestone 2.2)
+
+#### Context
+Designing `ClassificationEngine` required decisions about: (a) how to handle unknown parameters without guessing, (b) whether classical and quantum security are independent dimensions, (c) how to integrate without duplicating the scanner registry's `QuantumThreat` enum.
+
+#### Decision
+1. **Orthogonal dimensions:** Classical security status and quantum threat type are classified independently. RSA-2048 can be `classical_security_status=SECURE` AND `quantum_threat_type=SHOR_POLYNOMIAL_BREAK` simultaneously — this is correct and intentional.
+2. **No-fabrication policy:** Any parameter (`key_length_bits`, `curve`) that is `None` produces `None` estimates. Never substitute defaults (e.g., never assume AES-128 when key size is missing).
+3. **Shor quantum bits = None:** Shor-vulnerable assets receive `effective_quantum_security_bits=None` always — Shor's algorithm fundamentally breaks the mathematical problem, not merely reduces key bits. Assigning any numeric value would be misleading.
+4. **BHT for hash functions:** Hash function quantum security is estimated using the Brassard-Høyer-Tapp quantum collision algorithm (output_bits / 3), explicitly documented in notes. Preimage (output_bits / 2) is noted as the weaker bound.
+5. **Reuse QuantumThreat:** `quantum_threat_type` field is populated with `QuantumThreat.value` strings from the scanner registry (`SHOR_POLYNOMIAL_BREAK`, `GROVER_BIT_HALVING`, etc.), extending with `"NOT_APPLICABLE"` and `"UNKNOWN"` for cases the registry doesn't cover. No duplicate enum created.
+
+#### Reasoning
+Orthogonal classification prevents incorrect correlations (e.g., "it's classically secure so it must be quantum-safe"). No-fabrication ensures downstream risk scoring (Phase 3) receives accurate inputs rather than fabricated defaults that would generate incorrect risk scores. BHT is the authoritative quantum collision bound cited by NIST SP 800-107.
+
+#### Alternatives Considered
+* Single "quantum risk level" combining classical and quantum (Rejected: collapses two independent security properties; loses RSA-2048 being "classically secure but quantum broken").
+* Default AES to 128-bit when key unknown (Rejected: would generate incorrect Grover analysis for unknown-key AES — violates no-fabrication policy).
+
+#### Consequences
+* Positive: Classification is fully deterministic and auditable.
+* Positive: `None` values in security bits explicitly signal missing evidence (not low security).
+* Trade-off: Some assets have `quantum_vulnerable=None` — acceptable; this accurately reflects evidence gaps.
+
+#### Related Modules / Data Contracts
+* `core/classification/classifier.py`, `core/classification/knowledge.py`, `docs/05_ALGORITHMS.md (Alg-05)`.
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
@@ -330,3 +432,6 @@ Before any Phase 4 implementation begins, freeze:
 | **DEC-007** | Integration of `lief` for Static Binary Symbol Inspection with Graceful Fallback | 2026-08-29 | Accepted |
 | **DEC-008** | Evolution of `RawFinding` Schema to v1.1.0 with Quantitative Multi-Signal Confidence | 2026-08-29 | Accepted |
 | **DEC-009** | API Contract and Frontend Product Specification Frozen Before Phase 4 | 2026-09-02 | Accepted |
+| **DEC-010** | Deterministic Normalization Architecture, Multi-Signal Aggregation, and RFC 4122 UUIDv5 Identity Strategy | 2026-09-03 | Accepted |
+| **DEC-011** | Additive CryptoAsset Schema Extension for Classification Fields | 2026-09-03 | Accepted |
+| **DEC-012** | Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy | 2026-09-03 | Accepted |

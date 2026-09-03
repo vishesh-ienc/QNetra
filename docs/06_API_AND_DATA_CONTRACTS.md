@@ -7,7 +7,7 @@
 
 ## 1. Schema Versioning & Status
 
-* **Contract Version:** `v1.1.0` (Discovery Layer Foundation)
+* **Contract Version:** `v1.2.0` (Discovery, Normalization, & Classification Layer)
 * **Status:** Active Specification
 * **CBOM Standard:** CycloneDX 1.6 Cryptography Extension
 * **Serialization Format:** JSON (Pydantic v2 validation)
@@ -86,29 +86,47 @@
 
 ---
 
-### 2.2. `CryptoAsset` (Canonical Normalized Cryptographic Asset)
-* **Purpose:** Canonical schema representing a verified, normalized cryptographic asset across all layers.
-* **Producer:** `core.normalization`
-* **Consumer:** `core.cbom_generator`, `core.risk_engine`, `core.mosca_engine`, `core.recommendation_engine`
+### 2.3. `CryptoAsset` (Canonical Normalized Cryptographic Asset — Schema v1.2.0)
+* **Purpose:** Canonical schema representing a verified, normalized, and classified cryptographic asset across all layers.
+* **Producer:** `core.normalization` (instantiation & deduplication), `core.classification` (security status & parameter enrichment)
+* **Consumer:** `core.cbom_generator`, `core.risk_engine`, `core.mosca_engine`, `core.recommendation_engine`, `backend.api`
+* **Status:** Implemented (`v1.2.0`)
 
 | Field | Type | Required | Description |
 | :--- | :--- | :---: | :--- |
-| `asset_id` | `string` (UUID) | Yes | Canonical unique ID for asset |
-| `algorithm` | `string` | Yes | Standardized algorithm name (e.g. `RSA`, `AES-256-GCM`, `ECDSA`) |
-| `primitive_type` | `enum` | Yes | `ASYMMETRIC_ENCRYPTION`, `DIGITAL_SIGNATURE`, `KEY_EXCHANGE`, `SYMMETRIC_CIPHER`, `HASH_FUNCTION`, `MAC`, `KDF`, `PROTOCOL` |
+| `asset_id` | `string` (UUIDv5) | Yes | Deterministic RFC 4122 UUIDv5 generated from canonical identity seed |
+| `algorithm` | `string` | Yes | Standardized algorithm name (e.g. `RSA`, `AES-256-GCM`, `SHA-256`, `ECDSA`) |
+| `algorithm_family` | `string` | No | Algorithmic family (e.g. `RSA`, `AES`, `SHA`, `ECC`, `CHACHA`, `ML-KEM`) |
+| `primitive_type` | `enum` | Yes | `ASYMMETRIC_ENCRYPTION`, `DIGITAL_SIGNATURE`, `KEY_EXCHANGE`, `SYMMETRIC_CIPHER`, `HASH_FUNCTION`, `MAC`, `KDF`, `PROTOCOL`, `LIBRARY`, `CERTIFICATE`, `KEY_MATERIAL`, `RANDOM`, `UNKNOWN` |
 | `key_length_bits` | `integer` | No | Key size or modulus length in bits (e.g. `2048`, `256`) |
-| `curve` | `string` | No | Elliptic curve name (e.g. `secp256r1`, `Ed25519`) |
+| `curve` | `string` | No | Standardized elliptic curve name (e.g. `secp256r1`, `Ed25519`, `Curve25519`) |
 | `mode` | `string` | No | Cipher mode of operation (e.g. `GCM`, `CBC`, `CTR`) |
-| `padding` | `string` | No | Padding scheme (e.g. `PKCS1_OAEP`, `PKCS7`) |
-| `implementation_library`| `string` | No | Underlying library (e.g. `pycryptodome`, `BouncyCastle`, `OpenSSL`) |
-| `location` | `object` | Yes | File path, line range, and repository context |
-| `quantum_vulnerable` | `boolean` | Yes | `true` if vulnerable to Shor or Grover attacks |
-| `quantum_threat_type` | `enum` | Yes | `SHOR_POLYNOMIAL_BREAK`, `GROVER_BIT_HALVING`, `CLASSICALLY_BROKEN`, `QUANTUM_RESISTANT` |
+| `padding` | `string` | No | Padding scheme (e.g. `PKCS1_OAEP`, `PKCS7`, `NoPadding`) |
+| `implementation_library`| `string` | No | Canonical library name (e.g. `pycryptodome`, `OpenSSL`, `BouncyCastle`, `javax.crypto`) |
+| `location` | `FileLocation` | Yes | Primary source location (file path, line range, snippet, byte offset) |
+| `locations` | `List[FileLocation]` | Yes | All contributing source locations across supporting findings |
+| `supporting_finding_ids` | `List[string]` | Yes | List of `RawFinding.finding_id` strings corroborating this asset |
+| `supporting_findings` | `List[SupportingEvidence]` | Yes | Preserved evidentiary findings with snippets, methods, and individual scores |
+| `confidence_score` | `float` (0.0–1.0) | Yes | Deterministic multi-signal aggregated confidence score |
+| `confidence_level` | `enum` | Yes | `VERY_HIGH`, `HIGH`, `MEDIUM`, `LOW`, `VERY_LOW` |
+| `confidence_rationale` | `string` | Yes | Explainable mathematical breakdown of score and corroboration bonus |
+| `metadata` | `object` | Yes | Symbols, binary format, container context, extracted parameter dictionaries |
+| `classical_security_status` | `enum` | No | Phase 2.2 Classification: `SECURE`, `WEAK`, `BROKEN`, `UNKNOWN` |
+| `quantum_vulnerable` | `boolean` | No | Phase 2.2 Classification: `true` if vulnerable to Shor or Grover, `false` if safe, `null` if unknown |
+| `quantum_threat_type` | `string` | No | Phase 2.2 Classification: `SHOR_POLYNOMIAL_BREAK`, `GROVER_BIT_HALVING`, `QUANTUM_RESISTANT`, `CLASSICALLY_BROKEN`, `NOT_APPLICABLE`, `UNKNOWN` |
+| `quantum_security_status` | `enum` | No | Phase 2.2 Classification: `SAFE`, `DEGRADED`, `CRITICAL`, `UNKNOWN` |
+| `effective_classical_security_bits` | `integer` | No | Phase 2.2 Classification: NIST SP 800-57 equivalent classical bits (`112`, `128`, `256`) |
+| `effective_quantum_security_bits` | `integer` | No | Phase 2.2 Classification: Post-quantum security bits (Grover: $K/2$, BHT: $N/3$, Shor: `null`) |
+| `classification_notes` | `string` | No | Phase 2.2 Classification: Deterministic explainable rationale for classical & quantum assessments |
+| `risk_score` | `integer` (0-100) | No | Phase 3 Risk Engine placeholder |
+| `risk_severity` | `enum` | No | Phase 3 Risk Engine placeholder |
+| `recommendation_id` | `string` | No | Phase 3 Recommendation placeholder |
 
 ```json
 {
   "asset_id": "c1a93e3d-3b1a-4c28-98e3-a4c3e21199a0",
   "algorithm": "RSA",
+  "algorithm_family": "RSA",
   "primitive_type": "ASYMMETRIC_ENCRYPTION",
   "key_length_bits": 2048,
   "curve": null,
@@ -119,12 +137,42 @@
     "file_path": "src/security/crypto_manager.py",
     "start_line": 42,
     "end_line": 44,
+    "byte_offset": null,
     "snippet": "key = RSA.generate(2048, e=65537)"
   },
+  "locations": [
+    {
+      "file_path": "src/security/crypto_manager.py",
+      "start_line": 42,
+      "end_line": 44,
+      "snippet": "key = RSA.generate(2048, e=65537)"
+    }
+  ],
+  "supporting_finding_ids": [
+    "f81d4fae-7dec-11d0-a765-00a0c91e6bf6",
+    "a2b94fae-7dec-11d0-a765-00a0c91e6bf7"
+  ],
+  "confidence_score": 0.965,
+  "confidence_level": "VERY_HIGH",
+  "confidence_rationale": "Multi-finding aggregated confidence (2 findings across RepositoryScanner/PythonAnalyzer): base anchor 0.95 (AST) + corroboration bonus (+0.02 via AST, REGEX) -> Final: 0.97",
+  "classical_security_status": "SECURE",
   "quantum_vulnerable": true,
-  "quantum_threat_type": "SHOR_POLYNOMIAL_BREAK"
+  "quantum_threat_type": "SHOR_POLYNOMIAL_BREAK",
+  "quantum_security_status": "CRITICAL",
+  "effective_classical_security_bits": 112,
+  "effective_quantum_security_bits": null,
+  "classification_notes": "[HIGH] Classical [SECURE]: RSA-2048 classical security: SECURE (~112 bits equivalent, NIST SP 800-57 Table 2). | Quantum [CRITICAL]: RSA is vulnerable to Shor's algorithm (polynomial-time quantum attack).",
+  "risk_score": null,
+  "risk_severity": null
 }
 ```
+
+#### Deduplication & Aggregation Specifications
+1. **Source Code Statements:** Findings within the same source file matching compatible algorithm representations and non-conflicting parameters within $\pm 2$ lines are merged into a single asset.
+2. **Binary Targets:** Findings within the same compiled binary matching the same algorithm and compatible parameters merge into that binary's asset.
+3. **Container Context:** Findings within the same container path matching the same library/package merge into a single asset.
+4. **Deterministic Identity Strategy:** Asset IDs are generated via RFC 4122 UUIDv5 with seed `path:{file}|line:{line}|alg:{alg}|key:{key}|mode:{mode}|curve:{curve}|lib:{lib}` under DNS namespace `asset.qnetra.io`.
+5. **Confidence Aggregation Formula:** $C_{\text{agg}} = \min\left(1.0, S_{\max} + \sum_{i \neq \max} 0.05 \times s_i\right)$, strictly monotonic and explainable.
 
 ---
 

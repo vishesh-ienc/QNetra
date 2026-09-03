@@ -85,25 +85,78 @@ $$\text{Confidence} = \min\left(\text{Base}(\text{Signal}) + \sum \text{Bonus}(\
 
 ## 2. Cryptographic Classification & Parameter Logic
 
-### Alg-05: Primitive & Quantum Threat Categorization
-* **Name:** Cryptographic Primitive Classifier
-* **Purpose:** Categorizes discovered cryptographic assets and tags their specific quantum threat mechanism.
-* **Inputs:** Normalized `CryptoAsset`.
-* **Processing:**
-  Classify into functional classes and quantum threat mechanisms:
-  
-  $$\text{Primitive Class} \in \{\text{Asymmetric PKC}, \text{Symmetric Cipher}, \text{Hash Function}, \text{KDF}, \text{Digital Signature}, \text{MAC}, \text{Protocol/TLS}\}$$
+### Alg-05: Cryptographic & Quantum Threat Classification Engine
+* **Name:** Deterministic Cryptographic Security & Quantum Threat Classifier
+* **Module:** `core.classification.classifier`, `core.classification.knowledge`
+* **Status:** Implemented (`v1.0.0` — Milestone 2.2)
+* **Purpose:** Enriches normalized `CryptoAsset` instances across three orthogonal dimensions: classical security status, quantum threat type, and post-quantum security status.
+* **Inputs:** Normalized `CryptoAsset` instance (algorithm, key length, curve, mode, primitive type).
+* **Core Principles:**
+  1. **Orthogonal Dimensions:** Classical security and quantum threat are evaluated independently (e.g. RSA-2048 is classically `SECURE` but quantumly `CRITICAL`).
+  2. **No-Fabrication Policy:** When required parameters are missing (e.g. unknown AES key size, unspecified ECC curve), security bit counts are set to `None` — never assumed or fabricated.
+  3. **Non-Numeric Shor Vulnerability:** Public-key primitives vulnerable to Shor's algorithm receive `effective_quantum_security_bits = None` because the underlying hardness assumption is fundamentally broken, not merely reduced.
 
-  Assign quantum impact vector:
-  * **Shor's Algorithm Impact:** Completely breaks all classical asymmetric cryptography (Integer Factorization and Discrete Logarithms: RSA, DSA, DH, ECDH, ECDSA, Ed25519) in $\mathcal{O}((\log N)^3)$ polynomial time.
-  * **Grover's Algorithm Impact:** Quadratic speedup against symmetric ciphers and hashing, reducing effective security from $N$ bits to $\sqrt{N}$ bits (e.g., AES-128 provides 64-bit quantum security; AES-256 provides 128-bit quantum security).
-* **Outputs:** Enriched `CryptoAsset` with `primitive_category`, `quantum_threat_type`, and `quantum_security_bits`.
+* **Processing Rules & Formulas:**
+
+#### A. Classical Security Status Assessment
+Assessed against NIST SP 800-131A Rev 2 and NIST SP 800-57 Part 1 Rev 5:
+
+$$\text{ClassicalStatus}(A) \in \{\text{SECURE}, \text{WEAK}, \text{BROKEN}, \text{UNKNOWN}\}$$
+
+* **RSA / DSA / DH:**
+  * Modulus $\ge 2048$ bits: `SECURE`
+  * Modulus $1024 \le K < 2048$ bits: `WEAK` (deprecated post-2015)
+  * Modulus $< 1024$ bits: `BROKEN` (factoring attacks feasible)
+  * Modulus unknown: `UNKNOWN`
+* **ECC (ECDSA, ECDH):**
+  * Recognized NIST / Brainpool / Curve25519 curves ($\ge 256$ bits): `SECURE`
+  * Curve unknown: `UNKNOWN`
+* **Symmetric Ciphers (AES, ChaCha20):**
+  * AES (any approved key size: 128, 192, 256): `SECURE`
+  * ChaCha20 (256-bit): `SECURE`
+  * 3DES: `WEAK` (effective 112 bits, deprecated by NIST SP 800-131A)
+  * DES, RC4: `BROKEN`
+* **Hash Functions:**
+  * SHA-256, SHA-384, SHA-512, SHA-3: `SECURE`
+  * SHA-1: `BROKEN` (SHAttered attack 2017)
+  * MD5: `BROKEN` (collision attacks practical)
+
+#### B. Classical Security Bits Estimation ($S_{\text{classical}}$)
+* **RSA / DH:** Looked up via NIST SP 800-57 Table 2 step-wise interpolation:
+  * $15360 \text{ bits} \to 256$, $7680 \text{ bits} \to 192$, $4096 \text{ bits} \to 140$, $3072 \text{ bits} \to 128$, $2048 \text{ bits} \to 112$, $1024 \text{ bits} \to 80$, $< 1024 \text{ bits} \to 56$.
+* **ECC:** Direct curve parameter security level (secp256r1, Curve25519 $\to 128$; secp384r1 $\to 192$; secp521r1 $\to 260$).
+* **Symmetric:** $S_{\text{classical}} = K_{\text{bits}}$ for AES and ChaCha20.
+* **Hash Functions:** Classical collision resistance = $\lfloor \text{output\_bits} / 2 \rfloor$ (birthday attack bound).
+
+#### C. Quantum Threat Tagging & Security Bits ($S_{\text{quantum}}$)
+* **Shor's Polynomial-Time Break (`SHOR_POLYNOMIAL_BREAK`):**
+  * Affects: RSA, DSA, DH, ECDSA, ECDH, Ed25519.
+  * Quantum Status: `CRITICAL`.
+  * Quantum Vulnerable: `True`.
+  * Security Bits: $S_{\text{quantum}} = \text{None}$ (fundamentally broken via order-finding in $\mathcal{O}((\log N)^3)$).
+* **Grover's Quadratic Key Search (`GROVER_BIT_HALVING`):**
+  * Affects: Symmetric ciphers (AES, ChaCha20, 3DES).
+  * Formula: $S_{\text{quantum}} = \lfloor K_{\text{bits}} / 2 \rfloor$.
+  * Threshold: $T_{\text{NIST}} = 128$ effective quantum bits.
+  * If $S_{\text{quantum}} \ge 128$: Quantum Status `SAFE`, `quantum_vulnerable = False` (e.g. AES-256, ChaCha20).
+  * If $0 < S_{\text{quantum}} < 128$: Quantum Status `DEGRADED`, `quantum_vulnerable = True` (e.g. AES-128 $\to 64$ bits, AES-192 $\to 96$ bits).
+  * If $K_{\text{bits}}$ is missing: Quantum Status `UNKNOWN`, `quantum_vulnerable = None`, $S_{\text{quantum}} = \text{None}$.
+* **BHT Quantum Collision Finding (Hash Functions):**
+  * Formula: $S_{\text{quantum}} = \lfloor \text{output\_bits} / 3 \rfloor$ (Brassard-Høyer-Tapp algorithm bound $\mathcal{O}(2^{N/3})$).
+  * SHA-256: $S_{\text{quantum}} = 85$ bits ($< 128 \implies \text{DEGRADED}$, `quantum_vulnerable = True` for collision contexts).
+  * SHA-384: $S_{\text{quantum}} = 128$ bits ($= 128 \implies \text{SAFE}$, `QUANTUM_RESISTANT`).
+  * SHA-512: $S_{\text{quantum}} = 171$ bits ($> 128 \implies \text{SAFE}$, `QUANTUM_RESISTANT`).
+* **Post-Quantum Cryptography (`QUANTUM_RESISTANT`):**
+  * ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205): `SAFE`, `quantum_vulnerable = False`.
+
+* **Outputs:** Mutated canonical `CryptoAsset` with populated classification fields:
+  `classical_security_status`, `quantum_security_status`, `quantum_vulnerable`, `quantum_threat_type`, `effective_classical_security_bits`, `effective_quantum_security_bits`, and `classification_notes`.
 
 ---
 
 ## 3. Quantum Risk Assessment Engine
 
-### Alg-04: Deterministic Quantum Vulnerability Risk Scoring
+### Alg-06: Deterministic Quantum Vulnerability Risk Scoring
 * **Name:** Multi-Factor Quantum Cryptographic Risk Calculator
 * **Purpose:** Computes an explainable, deterministic risk score (0 to 100) and 4-tier severity rating for every asset and the overall repository.
 * **Inputs:** `CryptoAsset` parameters:
@@ -145,7 +198,7 @@ Final Asset Risk Score = Clamp(B + M_key + ContextBonus, 0, 100)
 
 ## 4. Mosca Migration Assessment Logic
 
-### Alg-05: Michele Mosca Migration Inequality & Urgency Evaluation
+### Alg-07: Michele Mosca Migration Inequality & Urgency Evaluation
 * **Name:** Mosca Theorem Quantum Urgency Calculator
 * **Purpose:** Evaluates whether an organization is already in a state of quantum vulnerability due to the Harvest Now, Decrypt Later (HNDL) threat model.
 * **Mathematical Model:**
