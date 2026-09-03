@@ -560,4 +560,42 @@ class TestNormalizationRegressions:
             "Buffer size '256' in raw_sym must not inject AES key size"
         )
 
+    def test_rsa_unknown_key_no_fabricated_2048(self):
+        """
+        NO-FABRICATION: RSA with variable/unknown key size must produce
+        algorithm='RSA' and key_length_bits=None. Must NOT fabricate RSA-2048.
+        """
+        f = _make_finding(
+            raw_symbol="key = RSA.generate(keysize)",
+            suspected_algorithm="RSA",
+            artifact_category=ArtifactCategory.ASYMMETRIC_PKC,
+            key_size_hint=None,
+            start_line=85,
+        )
+        assets = Normalizer().normalize([f])
+        assert len(assets) == 1
+        assert assets[0].algorithm == "RSA"
+        assert assets[0].key_length_bits is None, (
+            f"Expected key_length_bits=None for RSA with unknown key size, got {assets[0].key_length_bits}"
+        )
+
+    def test_ecdsa_unknown_curve_no_fabricated_curve(self):
+        """
+        NO-FABRICATION: ECDSA with variable/unknown curve must produce
+        algorithm='ECDSA' and curve=None. Must NOT fabricate P-256 / secp256r1.
+        """
+        f = _make_finding(
+            raw_symbol="key = ECC.generate(curve=selected_curve)",
+            suspected_algorithm="ECDSA",
+            artifact_category=ArtifactCategory.DIGITAL_SIGNATURE,
+            curve_hint=None,
+            start_line=95,
+        )
+        assets = Normalizer().normalize([f])
+        assert len(assets) == 1
+        assert assets[0].algorithm == "ECDSA"
+        assert assets[0].curve is None, (
+            f"Expected curve=None for ECDSA with unknown curve, got {assets[0].curve}"
+        )
+
 

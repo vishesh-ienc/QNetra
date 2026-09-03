@@ -18,7 +18,7 @@ Covers:
   6. Determinism (3 tests)
      - Same input → same output, repeated calls, full batch classify()
   7. Integration (1 test)
-     - 289 RawFindings → 142 CryptoAssets → all classified without crash
+     - 289 RawFindings → 147 CryptoAssets → all classified without crash
 
 Total: 45 tests
 """
@@ -605,11 +605,12 @@ class TestIntegration:
         import sys
 
         # Build path to sample repository
+        REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         sample_repo = os.path.join(
-            os.path.dirname(__file__), "..", "..", "samples", "crypto_samples"
+            REPO_ROOT, "samples", "repository_samples"
         )
         if not os.path.isdir(sample_repo):
-            pytest.skip("samples/crypto_samples not found — run demo script first")
+            pytest.skip("samples/repository_samples not found — run demo script first")
 
         from scanners.framework.models import ScanTarget, TargetType
         from scanners.repository.scanner import RepositoryScanner

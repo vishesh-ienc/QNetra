@@ -57,15 +57,16 @@ from core.classification.models import (
     QuantumSecurityStatus,
 )
 from core.models import CryptoAsset, PrimitiveType
+from scanners.registry.crypto_algorithms import QuantumThreat
 
 logger = logging.getLogger(__name__)
 
-# Canonical QuantumThreat string values from scanners.registry.crypto_algorithms.
-# We use string constants to avoid circular imports with the scanner registry.
-_QT_SHOR = "SHOR_POLYNOMIAL_BREAK"
-_QT_GROVER = "GROVER_BIT_HALVING"
-_QT_BROKEN = "CLASSICALLY_BROKEN"
-_QT_RESISTANT = "QUANTUM_RESISTANT"
+# Canonical QuantumThreat values reused directly from scanners.registry.crypto_algorithms.
+# Extended with NOT_APPLICABLE and UNKNOWN for non-cryptographic/unrecognized components.
+_QT_SHOR = QuantumThreat.SHOR_POLYNOMIAL_BREAK.value
+_QT_GROVER = QuantumThreat.GROVER_BIT_HALVING.value
+_QT_BROKEN = QuantumThreat.CLASSICALLY_BROKEN.value
+_QT_RESISTANT = QuantumThreat.QUANTUM_RESISTANT.value
 _QT_NOT_APPLICABLE = "NOT_APPLICABLE"
 _QT_UNKNOWN = "UNKNOWN"
 

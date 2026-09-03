@@ -78,7 +78,7 @@ Implementing Phase 2 Milestone 2.3: CycloneDX 1.6+ CBOM Serializer. Classificati
   * [x] Explainable, monotonic confidence aggregator (`core/normalization/confidence_aggregator.py`).
   * [x] Normalization orchestrator & statistics calculator (`core/normalization/normalizer.py`).
   * [x] Normalization test suite: 19 unit & integration tests (`tests/test_core/test_normalization.py`).
-  * [x] Real data validation: processed 289 raw findings into 142 canonical assets with 147 merges.
+  * [x] Real data validation: processed 289 raw findings into 147 canonical assets with 142 merges.
 
 ---
 
