@@ -1,7 +1,7 @@
 # QNetra — Project Status & Implementation Summary
 
-> **Current As Of:** September 3, 2026
-> **Status:** 🟢 **Active / Phase 1 Complete — Phase 2 Normalization Milestone Complete — API & Frontend Specs Frozen**
+> **Current As Of:** September 4, 2026
+> **Status:** 🟢 **Active / Phase 1 & 2 Complete — Phase 3 Milestone 3.1 Complete — 313/313 Tests Passing**
 > **Tracking Protocol:** This document is the comprehensive single-file status report for **QNetra**, maintained and updated on every meaningful progress milestone, architectural decision, and codebase update.
 
 ---
@@ -20,14 +20,14 @@
 
 | Dimension | Current Status | Notes / Highlights |
 | :--- | :--- | :--- |
-| **Current Phase** | **Phase 2 In Progress** (Milestones 2.1 & 2.2 Complete) | Normalization & Classification subsystems complete & validated on 289 real findings |
-| **Test Suite Health** | 🟢 **153 / 154 Tests Passing (1 skipped, 100% active pass rate)** | Run via `pytest` (0 regressions, ~0.8s execution) |
-| **Codebase Coverage** | 🟢 **85% Core Coverage** (882 statements in `core/`) | High coverage across classification (models, knowledge, classifier) & normalization |
-| **Pipeline Validation** | 🟢 **147 Canonical Assets Classified** | 289 raw findings merged into 147 canonical assets; 65 Shor/Grover vulnerable, 38 safe, 44 unknown |
+| **Current Phase** | **Phase 3 In Progress** (Milestone 3.1 Complete) | Normalization, Classification, CBOM, & Risk Engine complete & validated on 289 real findings |
+| **Test Suite Health** | 🟢 **313 / 313 Tests Passing (100% active pass rate)** | Run via `pytest` (0 regressions, ~1.4s execution) |
+| **Codebase Coverage** | 🟢 **98% Risk Engine, 92% CBOM, 85%+ Core Coverage** | High coverage across risk engine, CBOM, classification & normalization |
+| **Pipeline Validation** | 🟢 **147 Canonical Assets Classified & Assessed** | 289 raw findings → 147 assets → 147 classified → 147 risk assessments (overall 83.8 CRITICAL) |
 | **Active Blockers** | 🟢 **None** | No blocking architectural or operational defects |
 | **Documentation Sync** | 🟢 **100% Synchronized** | `docs/01` to `docs/10`, `AGENTS.md`, `PROJECT_RULES.md`, `PROJECT_CONTEXT.md`, `current_status.md` |
-| **Next Target Milestone** | **Phase 2.3: CBOM Generation** | `core/cbom_generator/` CycloneDX 1.6+ JSON & XML CBOM serializers |
-| **API Contract** | 🟢 **Frozen & Aligned (v1.2.0)** — `docs/10_API_CONTRACT.md` | 20 sections, Section 8 aligned with Phase 2.2 classification fields |
+| **Next Target Milestone** | **Phase 3.2: Mosca Migration Engine** | `core/mosca_engine/` Michele Mosca $X+Y > Z$ timeline simulator & HNDL alert generator |
+| **API Contract** | 🟢 **Frozen & Aligned (v1.2.0)** — `docs/10_API_CONTRACT.md` | 20 sections, Section 9 aligned with Phase 3.1 risk engine fields |
 | **Frontend Spec** | 🟢 **Frozen** — `docs/11_FRONTEND_PRODUCT_SPEC.md` | 12 sections, E2E user flow, component guidance, visual direction |
 
 ---
@@ -67,16 +67,17 @@
                                     │ Emits Enriched Canonical CryptoAsset
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│ 4. CBOM Generation Layer (core.cbom_generator)                      [PLANNED]   │
-│    - CycloneDX 1.6+ JSON & XML CBOM Serializer                                  │
+│ 4. CBOM Generation Layer (core.cbom_generator)                    [COMPLETED]   │
+│    - CycloneDX 1.6+ JSON & XML CBOM Serializer (deterministic / live modes)     │
+│    - Structural validator: required fields, enums, unique bom-refs, security    │
 └───────────────────────────────────┬─────────────────────────────────────────────┘
                                     │
                                     ▼
 ┌─────────────────────────────────────────────────────────────────────────────────┐
-│ 5. Downstream Intelligence Engines (core.risk / mosca / recommendations)[PLANNED]│
-│    - Deterministic Quantum Risk Engine (0-100 scoring & justifications)         │
-│    - Mosca Inequality Simulator (X + Y > Z urgency & HNDL window)               │
-│    - NIST FIPS 203/204/205 PQC & Hybrid Migration Recommender                   │
+│ 5. Downstream Intelligence Engines (core.risk / mosca / recommendations)       │
+│    - Deterministic Quantum Risk Engine (0-100 scoring & justifications)[COMPLETED]│
+│    - Mosca Inequality Simulator (X + Y > Z urgency & HNDL window)   [PLANNED]   │
+│    - NIST FIPS 203/204/205 PQC & Hybrid Migration Recommender       [PLANNED]   │
 └───────────────────────────────────┬─────────────────────────────────────────────┘
                                     │
                                     ▼

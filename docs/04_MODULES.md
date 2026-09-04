@@ -17,7 +17,7 @@
 | **Normalization Layer** | `core.normalization` | **Implemented** | High (P0) | Translating raw findings into canonical `CryptoAsset` models (UUIDv5 identity, confidence aggregation) |
 | **Classification Engine** | `core.classification` | **Implemented** | High (P0) | Deterministic classical + quantum threat classification of `CryptoAsset` objects |
 | **CBOM Generator** | `core.cbom_generator` | **Implemented** | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts from `CryptoAsset` list |
-| **Quantum Risk Engine** | `core.risk_engine` | Planned | High (P0) | Computing deterministic quantum vulnerability risk scores |
+| **Quantum Risk Engine** | `core.risk_engine` | **Implemented** | High (P0) | Computing deterministic quantum vulnerability risk scores (0–100) and severity ratings |
 | **Mosca Assessment Engine** | `core.mosca_engine` | Planned | High (P0) | Simulating $X+Y > Z$ migration timelines and HNDL risk |
 | **PQC Recommendation Engine**| `core.recommendation_engine`| Planned | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements |
 | **Backend API Gateway** | `backend.api` | Planned | High (P0) | REST API endpoints for scans, data retrieval, and export |
@@ -154,9 +154,9 @@
 * **Outputs:** CycloneDX 1.6 CBOM JSON object and exportable file.
 * **Dependencies:** JSON serializer, CycloneDX schema validator.
 * **Related Data Contracts:** `CycloneDX_CBOM_JSON`.
-* **Status:** Planned
+* **Status:** Implemented (`v1.0.0` — Milestone 2.3)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_cbom_generator.py` (validation against official CycloneDX JSON schema).
+* **Tests:** `tests/test_core/test_cbom_generator.py` (116 tests, 92% coverage).
 
 ---
 
@@ -171,9 +171,9 @@
 * **Outputs:** Classified `CryptoAsset` records enriched with quantum threat tags.
 * **Dependencies:** Cryptographic Knowledge Base.
 * **Related Data Contracts:** `CryptoAsset`.
-* **Status:** Planned
+* **Status:** Implemented (`v1.0.0` — Milestone 2.2)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_classification.py`.
+* **Tests:** `tests/test_core/test_classification.py` (54 tests, 85% core coverage).
 
 ---
 
@@ -189,9 +189,9 @@
 * **Outputs:** `RiskAssessmentReport` (aggregate score, asset risk ratings, high-priority vulnerabilities).
 * **Dependencies:** Pure mathematical scoring logic ([docs/05_ALGORITHMS.md](docs/05_ALGORITHMS.md)).
 * **Related Data Contracts:** `RiskAssessmentReport`.
-* **Status:** Planned
+* **Status:** Implemented (`v1.0.0` — Milestone 3.1)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_risk_engine.py` (scoring verification across diverse test vectors).
+* **Tests:** `tests/test_core/test_risk_engine.py` (41 tests, 98% coverage).
 
 ---
 

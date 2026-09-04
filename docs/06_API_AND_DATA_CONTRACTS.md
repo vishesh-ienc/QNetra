@@ -180,6 +180,7 @@
 * **Purpose:** Quantifies risk levels, aggregate scores, and vulnerability breakdowns.
 * **Producer:** `core.risk_engine`
 * **Consumer:** `backend.api`, `frontend`, `core.mosca_engine`
+* **Status:** Implemented (`v1.0.0` — Milestone 3.1)
 
 | Field | Type | Required | Description |
 | :--- | :--- | :---: | :--- |

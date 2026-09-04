@@ -40,7 +40,7 @@ Classification & Parameter Enrichment               [✓ IMPLEMENTED - Phase 2]
         ↓
 CBOM Generation (CycloneDX 1.6 JSON/XML)            [✓ IMPLEMENTED - Phase 2]
         ↓
-Quantum Risk Engine (Deterministic Scoring)         [○ PLANNED - Phase 3]
+Quantum Risk Engine (Deterministic Scoring)         [✓ IMPLEMENTED - Phase 3]
         ↓
 Mosca Migration Urgency Engine (X + Y > Z)          [○ PLANNED - Phase 3]
         ↓
@@ -105,42 +105,39 @@ FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
 
 ```text
 CURRENT PHASE:
-Phase 2 — Core Normalization, Classification, & CBOM Generation (IN PROGRESS)
+Phase 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations) (IN PROGRESS)
 
 CURRENT SUB-PHASE:
-Milestones 2.1, 2.2 & 2.3 Complete — Normalization, Classification, & CycloneDX 1.6 CBOM Generator
-Next: Phase 3 — Quantum Risk Engine, Mosca Engine, PQC Recommendation Engine
+Milestones 2.1, 2.2, 2.3, & 3.1 Complete — Normalization, Classification, CBOM Generator, & Risk Engine
+Next: Milestone 3.2 — Michele Mosca Migration Engine (core.mosca_engine)
 
 LAST COMPLETED:
-Phase 2 Milestone 2.3 CBOM Generator (2026-09-04):
-  - Implemented core/cbom_generator/__init__.py (public API: CBOMSerializer, CBOMValidator)
-  - Implemented core/cbom_generator/models.py (CDXBom, CDXComponent, CDXCryptoProperties, CDXAlgorithmProperties, CDXEvidence, CDXProperty)
-  - Implemented core/cbom_generator/mapper.py (CryptoAsset → CDXComponent; PrimitiveType → CDX primitive routing; no-fabrication policy)
-  - Implemented core/cbom_generator/serializer.py (CBOMSerializer.to_json(), to_xml(), to_json_dict(), build_bom())
-  - Implemented core/cbom_generator/validator.py (structural validator: required fields, enum values, bom-ref uniqueness, nistQuantumSecurityLevel)
-  - Created tests/test_core/test_cbom_generator.py (116 tests, 92% CBOM coverage)
-  - Full test suite: 272 passed, 0 failed
-  - Updated docs/04_MODULES.md, docs/07_PROGRESS.md, docs/08_DECISIONS_AND_LOG.md, PROJECT_CONTEXT.md
-  - Fixed AES key-size raw symbol injection bug in algorithm_normalizer.py + added 3 regression tests
-  - Extended CryptoAsset schema to v1.2.0 with 5 classification fields + updated to_api_dict() (DEC-011)
-  - Implemented core/classification/models.py (ClassicalSecurityStatus, QuantumSecurityStatus, ClassificationResult)
-  - Implemented core/classification/knowledge.py (NIST SP 800-57 tables, ECC curve profiles, Grover formula, BHT hash profiles)
-  - Implemented core/classification/classifier.py (ClassificationEngine with orthogonal dimensions & no-fabrication policy)
-  - Created 54-test classification suite; 153/154 total tests passing, 85% core coverage
-  - Validated full pipeline: 289 RawFindings -> 147 CryptoAssets -> all classified (65 vuln, 38 safe, 44 unknown)
-  - Updated docs/04, docs/05, docs/06, docs/07, docs/08 (DEC-011, DEC-012), docs/10, current_status, PROJECT_CONTEXT
+Phase 3 Milestone 3.1 Risk Engine (2026-09-04):
+  - Implemented core/risk_engine/__init__.py (public API: RiskEngine, RiskAssessment, RiskAssessmentReport, RiskFactor, RiskSeverity, AssetRiskDetail)
+  - Implemented core/risk_engine/models.py (RiskSeverity, RiskFactor, RiskAssessment, AssetRiskDetail, RiskAssessmentReport)
+  - Implemented core/risk_engine/knowledge.py (base scores, parameter modifiers, severity thresholds, explainability templates)
+  - Implemented core/risk_engine/scorer.py (RiskScorer: 0-100 bounded, pure, double-count prevention, no fabrication)
+  - Implemented core/risk_engine/engine.py (RiskEngine: assess, assess_all, assess_and_enrich, generate_report)
+  - Created tests/test_core/test_risk_engine.py (41 tests, 98% risk engine coverage)
+  - Full test suite: 313 passed, 0 failed
+  - Full pipeline verification: 289 RawFindings -> 147 Assets -> 147 Classified -> 147 Risk Assessments (overall 83.8 CRITICAL)
+  - Updated docs/04_MODULES.md, docs/05_ALGORITHMS.md, docs/06_API_AND_DATA_CONTRACTS.md, docs/07_PROGRESS.md, docs/08_DECISIONS_AND_LOG.md (DEC-014), docs/09, docs/10, PROJECT_CONTEXT.md, current_status.md, current_prompt_update.md
 
 PREVIOUSLY COMPLETED:
+Phase 2 Milestone 2.3 CBOM Generator (2026-09-04):
+  - CycloneDX 1.6 JSON/XML serialization, validator, mapper, models (116 tests, 92% coverage)
+Phase 2 Classification Subsystem & Normalization Hardening (2026-09-03):
+  - ClassificationEngine with orthogonal dimensions & no-fabrication policy (54 tests)
 Phase 2 Normalization & CryptoAsset Generation (2026-09-03):
   - Canonical CryptoAsset domain model, AlgorithmNormalizer, Deduplicator (UUIDv5), ConfidenceAggregator
 Phase 1 Discovery Layer Implementation & Validation:
   - BaseScanner, ScannerRouter, registries, Repository/Container/Binary scanners, 77 tests (289 real findings)
 
 CURRENTLY IMPLEMENTING:
-Phase 3 Milestone 3.1: Quantum Risk Engine (core.risk_engine).
+Phase 3 Milestone 3.2: Mosca Migration Assessment Engine (core.mosca_engine).
 
 NEXT LOGICAL STEP:
-Phase 3 Milestone 3.1: Deterministic Quantum Risk Scoring Engine (core.risk_engine).
+Phase 3 Milestone 3.2: Michele Mosca Migration Timeline Engine (core.mosca_engine).
 ```
 
 ---
@@ -177,7 +174,12 @@ Phase 3 Milestone 3.1: Deterministic Quantum Risk Scoring Engine (core.risk_engi
   * `CBOMValidator`: Structural validator (required fields, assetType/primitive enums, bom-ref uniqueness, serialNumber, nistQuantumSecurityLevel bounds).
   * `mapper.py`: PrimitiveType → CDX primitive routing, no-fabrication display name, qnetra: namespaced evidence properties.
   * `models.py`: CDXBom, CDXComponent, CDXAlgorithmProperties, CDXEvidence, CDXProperty dataclasses.
-* **Test Suite (`tests/`):** 272 passed tests, 92% CBOM coverage, 85%+ core coverage overall.
+* **Quantum Risk Engine (`core/risk_engine/`):**
+  * `RiskEngine`: Pure single/batch assessment (`assess`, `assess_all`), in-place enrichment (`assess_and_enrich`, `assess_and_enrich_all`), and aggregate `RiskAssessmentReport` generation.
+  * `RiskScorer`: Deterministic Alg-06 calculator with strict 0–100 bounds, double-counting prevention, and no-fabrication parameter handling.
+  * `models.py`: `RiskSeverity`, `RiskFactor`, `RiskAssessment`, `AssetRiskDetail`, `RiskAssessmentReport`.
+  * `knowledge.py`: Algorithmic base scores, parameter modifiers, severity thresholds, explainability templates.
+* **Test Suite (`tests/`):** 313 passed tests, 98% risk engine coverage, 92% CBOM coverage, 85%+ core coverage overall.
 
 ### ○ PLANNED (Upcoming Phases)
 * **Phase 3:** `core.risk_engine` (Deterministic risk scoring), `core.mosca_engine` ($X+Y > Z$ simulation), `core.recommendation_engine` (NIST FIPS 203/204/205 mapping).

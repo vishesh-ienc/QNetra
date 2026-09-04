@@ -147,6 +147,8 @@ In August 2024, the National Institute of Standards and Technology (NIST) releas
 2. **NIST FIPS 204:** *Module-Lattice-Based Digital Signature Standard (ML-DSA)* (August 2024).
 3. **NIST FIPS 205:** *Stateless Hash-Based Digital Signature Standard (SLH-DSA)* (August 2024).
 4. **NIST SP 800-131A Rev. 2:** *Transitioning the Use of Cryptographic Algorithms and Key Lengths*.
-5. **CycloneDX 1.6 Specification:** *Cryptographic Bill of Materials (CBOM) Extensions*, OWASP Foundation.
-6. **BSI TR-02102-1:** *Cryptographic Mechanisms: Recommendations and Key Lengths*, Federal Office for Information Security, Germany.
-7. **Mosca, M. (2015):** *Cybersecurity in an Era with Quantum Computers: Will We Be Ready?*, IEEE Security & Privacy.
+5. **NIST SP 800-57 Part 1 Rev. 5:** *Recommendation for Key Management: Part 1 – General* (Equivalent security strength tables).
+6. **QNetra Alg-06:** *Deterministic Multi-Factor Cryptographic & Quantum Risk Calculator* (`core.risk_engine`).
+7. **CycloneDX 1.6 Specification:** *Cryptographic Bill of Materials (CBOM) Extensions*, OWASP Foundation.
+8. **BSI TR-02102-1:** *Cryptographic Mechanisms: Recommendations and Key Lengths*, Federal Office for Information Security, Germany.
+9. **Mosca, M. (2015):** *Cybersecurity in an Era with Quantum Computers: Will We Be Ready?*, IEEE Security & Privacy.

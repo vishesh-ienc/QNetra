@@ -157,41 +157,56 @@ $$\text{ClassicalStatus}(A) \in \{\text{SECURE}, \text{WEAK}, \text{BROKEN}, \te
 ## 3. Quantum Risk Assessment Engine
 
 ### Alg-06: Deterministic Quantum Vulnerability Risk Scoring
-* **Name:** Multi-Factor Quantum Cryptographic Risk Calculator
+* **Name:** Multi-Factor Cryptographic & Quantum Risk Calculator
+* **Module:** `core.risk_engine` (`RiskEngine`, `RiskScorer`, `knowledge`)
+* **Status:** Implemented (`v1.0.0` — Milestone 3.1)
 * **Purpose:** Computes an explainable, deterministic risk score (0 to 100) and 4-tier severity rating for every asset and the overall repository.
-* **Inputs:** `CryptoAsset` parameters:
-  * $A_{\text{type}}$: Algorithmic Family (RSA, ECC, AES, SHA, etc.)
-  * $K_{\text{len}}$: Key Length / Security Bits
-  * $C_{\text{dep}}$: Classical Deprecation Status (NIST SP 800-131A)
-  * $E_{\text{ctx}}$: Exposure Context (External Facing, Key Exchange, At-Rest Storage)
-* **Processing:**
+* **Inputs:** Classified `CryptoAsset` instance (algorithm, key length, curve, mode, padding, classical security status, quantum security status, quantum threat type).
+* **Core Principles:**
+  1. **Strict 0–100 Boundedness:** Scores are mathematically clamped: $0 \le \text{RiskScore} \le 100$.
+  2. **Double-Counting Prevention:** Factor ownership is mutually exclusive:
+     - If classically broken, classical risk factor claims 100 points; quantum threat analysis is marked superseded (0 points).
+     - If Shor-vulnerable, quantum factor claims 90 points; classical status does not add redundant penalties.
+  3. **Strict No-Fabrication:** Missing parameters (key size, curve) are never guessed; they receive zero modifiers and are cited in explainability factors.
+  4. **Confidence Decoupling:** Discovery confidence is preserved as descriptive metadata; it does NOT artificially deflate risk scores.
 
-```
-Risk Scoring Formula:
-Base Score (B) determined by Algorithmic Class:
-  - Shor-Vulnerable Asymmetric (RSA, ECC, DH, ECDSA): B = 90
-  - Grover-Impacted Symmetric < 256 bits (AES-128, 3DES): B = 60
-  - Broken Classical Primitives (MD5, SHA-1, DES): B = 100
-  - Quantum-Resistant Classical (AES-256, SHA-384, SHA-512): B = 20
-  - NIST-Approved PQC (ML-KEM, ML-DSA, SLH-DSA): B = 0
+* **Processing Formulas & Factor Model:**
 
-Key Length Modifier (M_key):
-  - If RSA Key < 2048: M_key = +10
-  - If RSA Key >= 4096: M_key = -5
-  - If AES Key == 128: M_key = +10
-  - If AES Key == 256: M_key = -10
+```text
+Risk Score Calculation:
+Score = Clamp(Sum(RiskFactor.score), 0, 100)
 
-Final Asset Risk Score = Clamp(B + M_key + ContextBonus, 0, 100)
+1. Base Score (B) by Algorithmic Class:
+   - Broken Classical Primitives (MD5, SHA-1, DES, RC4): B = 100
+   - Shor-Vulnerable Asymmetric (RSA, ECC, DH, ECDSA): B = 90
+   - Grover-Impacted Symmetric < 256 bits (AES-128, 3DES): B = 60
+   - Grover/BHT-Impacted Hash Functions (SHA-256): B = 40
+   - Quantum-Resistant Classical (AES-256, SHA-384, SHA-512): B = 20
+   - NIST-Approved Standardized PQC (ML-KEM, ML-DSA, SLH-DSA): B = 0
+   - Unrecognized / Proprietary Primitive: B = 50
+   - Non-Cryptographic Artifacts (Library, Random): B = 0
+
+2. Parameter Modifiers (M_param):
+   - RSA Key < 2048: M_key = +10 (below NIST SP 800-131A minimum)
+   - RSA Key >= 4096: M_key = -5 (maximum classical security margin)
+   - AES Key == 128: M_key = +10 (halved to 64 bits post-Grover)
+   - AES Key == 256: M_key = -10 (retains 128 bits post-Grover)
+   - AES Key == 192: M_key = -5 (retains 96 bits post-Grover)
+   - Mode == ECB: M_mode = +15 (unauthenticated, pattern leakage)
+   - Padding == PKCS#1 v1.5: M_pad = +5 (Bleichenbacher vulnerability)
+
+3. Repository Overall Risk Score Aggregation:
+   Overall Score = Round(Min(100.0, 0.7 * Max(Score) + 0.3 * Mean(Score)), 1)
 ```
 
 * **Severity Tiers:**
-  * **Critical Risk (80–100):** Shor-vulnerable asymmetric algorithms (RSA, ECC, DH), broken primitives (MD5, SHA1, DES). Immediate migration required.
-  * **High Risk (60–79):** Symmetric ciphers with $< 256$-bit keys (AES-128), SHA-224, legacy TLS cipher suites without forward secrecy.
-  * **Medium Risk (30–59):** SHA-256 (adequate pre-quantum, medium longevity), proprietary implementations.
-  * **Low / Quantum-Resistant (0–29):** AES-256, SHA-384/512, standardized PQC algorithms (ML-KEM, ML-DSA).
-* **Outputs:** `AssetRiskScore`, `RepositoryRiskSummary`, itemized score explanation string.
-* **Assumptions:** NIST SP 800-131A and NIST PQC transition parameters.
-* **Limitations:** Does not assess physical side-channel leakage; focuses on algorithmic and parameter strength.
+  * **Critical Risk (80–100):** Shor-vulnerable asymmetric algorithms (RSA, ECC, DH), broken primitives (MD5, SHA-1, DES). Immediate migration required.
+  * **High Risk (60–79):** Symmetric ciphers with $< 256$-bit keys (AES-128), SHA-224, 3DES, legacy TLS protocols.
+  * **Medium Risk (30–59):** SHA-256 (adequate pre-quantum, medium longevity), AES with unknown key size, unverified primitives.
+  * **Low / Quantum-Resistant (0–29):** AES-256, SHA-384/512, standardized PQC algorithms (ML-KEM, ML-DSA), operational artifacts.
+* **Outputs:** `RiskAssessment` (per-asset), `RiskAssessmentReport` (repository-level), itemized `RiskFactor` breakdown.
+* **Assumptions:** NIST SP 800-131A Rev 2, NIST SP 800-57, and NIST FIPS 203/204/205 standards.
+* **Limitations:** Focuses on algorithmic, parameter, and protocol strength; does not model side-channel attacks or physical hardware vulnerabilities.
 * **Why Selected:** Fully deterministic, auditable, and transparent for compliance audits.
 
 ---

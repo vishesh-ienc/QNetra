@@ -456,6 +456,39 @@ No-fabrication in the CBOM is critical because downstream tools (risk engines, a
 
 ---
 
+### DEC-014 — Deterministic Cryptographic Risk Engine Architecture & Factor Model
+
+* **Date:** 2026-09-04
+* **Status:** Accepted
+* **Deciders:** AI Agent (Phase 3 Milestone 3.1)
+
+#### Context
+Milestone 3.1 required building a dedicated deterministic cryptographic risk engine (`core.risk_engine`) that converts classified `CryptoAsset` instances into an explainable 0–100 numerical risk score and 4-tier severity rating. Key architectural choices included: (a) strictly bounded 0–100 arithmetic without stochastic or ML components, (b) preventing double-counting between classical and quantum vulnerabilities, (c) handling unverified parameters without fabrication, (d) decoupling discovery confidence from mathematical risk severity, (e) isolating side-effects so batch evaluation does not mutate inputs, and (f) repository-level risk score aggregation.
+
+#### Decision
+1. **Multi-Factor Explainable Scoring (Alg-06):** Risk scores are computed as the clamped sum of discrete `RiskFactor` objects:
+   - Base algorithmic class: Broken (100), Shor-vulnerable (90), Grover symmetric < 256 bits (60), Grover/BHT hash (40), Quantum-resistant classical (20), NIST PQC (0), Unknown primitive (50), Operational non-crypto (0).
+   - Parameter modifiers: RSA < 2048 (+10), RSA >= 4096 (-5), AES-128 (+10), AES-256 (-10), AES-192 (-5), ECB mode (+15), PKCS#1 v1.5 (+5).
+2. **Double-Counting Prevention:** Factor ownership is strictly segmented. If an algorithm is classically broken (e.g. MD5, DES), the classical factor claims 100.0 points and the quantum threat is marked superseded (0.0 points), preventing invalid 100 + 90 = 190 blowup. Similarly, Shor-vulnerable asymmetric primitives claim 90.0 points from the quantum factor; classical SECURE status adds zero redundant penalties.
+3. **Strict No-Fabrication Policy:** When parameters (key length, curve) are missing, no guesses or default values are fabricated. Modifiers remain 0.0, and an explicit explainability factor notes that the parameter is unverified.
+4. **Confidence Decoupling:** Discovery confidence (`confidence_score`) is preserved as descriptive metadata on `RiskAssessment` and does NOT multiply or dilute the mathematical risk score. An uncertain RSA-1024 finding is still a 100-risk asset if deployed.
+5. **Purity vs. Enrichment Isolation:** `assess()` and `assess_all()` are purely functional and do NOT mutate input `CryptoAsset` objects. Explicit in-place enrichment is isolated to `assess_and_enrich()` and `assess_and_enrich_all()`.
+6. **Repository Aggregation:** Repository overall score is calculated as $\min(100.0, 0.7 \times \max(S) + 0.3 \times \text{mean}(S))$, ensuring critical individual vulnerabilities are not diluted away by hundreds of low-risk hashes while still reflecting repository scale.
+
+#### Reasoning
+Strict explainability and determinism are non-negotiable for enterprise cybersecurity and compliance audits (RULE-002). Treating confidence as metadata rather than a risk multiplier prevents hazardous false senses of security.
+
+#### Consequences
+* Positive: Fully deterministic, auditable, and traceable risk assessments with zero black-box scoring.
+* Positive: No regression in existing scanner or normalization subsystems.
+* Positive: Direct compatibility with `docs/06_API_AND_DATA_CONTRACTS.md` and `docs/10_API_CONTRACT.md`.
+* Trade-off: Repository aggregation formula weights the worst finding heavily (0.7), which intentionally errs on the side of security conservatism.
+
+#### Related Modules / Data Contracts
+* `core/risk_engine/` (`engine.py`, `scorer.py`, `models.py`, `knowledge.py`), `docs/05_ALGORITHMS.md` (Alg-06), `docs/06_API_AND_DATA_CONTRACTS.md` (Section 2.3), `docs/10_API_CONTRACT.md` (Section 9).
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
@@ -473,3 +506,5 @@ No-fabrication in the CBOM is critical because downstream tools (risk engines, a
 | **DEC-011** | Additive CryptoAsset Schema Extension for Classification Fields | 2026-09-03 | Accepted |
 | **DEC-012** | Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy | 2026-09-03 | Accepted |
 | **DEC-013** | CycloneDX 1.6 CBOM Generation Architecture | 2026-09-04 | Accepted |
+| **DEC-014** | Deterministic Cryptographic Risk Engine Architecture & Factor Model | 2026-09-04 | Accepted |
+

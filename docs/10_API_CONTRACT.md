@@ -480,7 +480,9 @@ Full asset detail including inline supporting finding evidence and recommendatio
 
 ## 9. Risk API
 
-Risk scores are computed deterministically by `core.risk_engine` (Phase 3). The frontend must not replicate the calculation.
+Risk scores are computed deterministically by `core.risk_engine` (Phase 3 Milestone 3.1). The frontend must not replicate the calculation.
+
+> **Implementation Status:** Core scoring engine implemented (`core.risk_engine`). REST endpoint binding pending Phase 4 API Gateway.
 
 ### `GET /scans/{scan_id}/risk`
 
