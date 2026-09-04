@@ -166,6 +166,7 @@ class TestImportsAndModelInvariants:
 
     def test_pqc_recommendation_type_values(self):
         assert PQCRecommendationType.DIRECT_PQC.value == "DIRECT_PQC"
+        assert PQCRecommendationType.CLASSICAL_UPGRADE.value == "CLASSICAL_UPGRADE"
         assert PQCRecommendationType.HYBRID.value == "HYBRID"
         assert PQCRecommendationType.ALREADY_PQC.value == "ALREADY_PQC"
         assert PQCRecommendationType.NO_MIGRATION_REQUIRED.value == "NO_MIGRATION_REQUIRED"
@@ -510,7 +511,7 @@ class TestHashFunctions:
                            key_length_bits=None, quantum_vulnerable=True,
                            quantum_threat_type="GROVER_BIT_HALVING")
         rec = self.engine.recommend(asset)
-        assert rec.recommendation_type == PQCRecommendationType.DIRECT_PQC
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert rec.recommended_algorithm == "SHA-384"
         # NOT an ML-KEM or ML-DSA recommendation
         assert rec.pqc_standard is None
@@ -520,6 +521,7 @@ class TestHashFunctions:
                            key_length_bits=None, quantum_vulnerable=True,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert rec.recommended_algorithm == "SHA-256"
         # SHA-1 is classically broken, priority is classical upgrade
         assert "SHA-256" in rec.recommended_algorithm
@@ -529,6 +531,7 @@ class TestHashFunctions:
                            key_length_bits=None, quantum_vulnerable=True,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert rec.recommended_algorithm == "SHA-256"
 
     def test_sha384_gets_no_migration_required(self):
@@ -574,7 +577,7 @@ class TestSymmetricCiphers:
                            key_length_bits=128, quantum_vulnerable=True,
                            quantum_threat_type="GROVER_BIT_HALVING")
         rec = self.engine.recommend(asset)
-        assert rec.recommendation_type == PQCRecommendationType.DIRECT_PQC
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert "256" in rec.recommended_algorithm
         # NOT an ML-KEM or ML-DSA recommendation
         assert rec.pqc_standard is None
@@ -598,6 +601,7 @@ class TestSymmetricCiphers:
                            key_length_bits=56, quantum_vulnerable=True,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert "AES-256" in (rec.recommended_algorithm or "")
 
     def test_symmetric_does_not_get_ml_kem(self):
@@ -870,7 +874,7 @@ class TestSerialization:
         report = self.engine.generate_report(assets)
         d = report.to_dict()
         required_keys = [
-            "total_assets", "direct_pqc_count", "hybrid_count", "already_pqc_count",
+            "total_assets", "direct_pqc_count", "classical_upgrade_count", "hybrid_count", "already_pqc_count",
             "no_migration_required_count", "unknown_count",
             "recommendations_by_target_algorithm",
             "recommendations_by_current_algorithm",
@@ -911,6 +915,7 @@ class TestBatchAndReport:
         report = self.engine.generate_report([])
         assert report.total_assets == 0
         assert report.direct_pqc_count == 0
+        assert report.classical_upgrade_count == 0
         assert report.hybrid_count == 0
         assert report.already_pqc_count == 0
         assert report.no_migration_required_count == 0
@@ -932,6 +937,8 @@ class TestBatchAndReport:
         assert report.no_migration_required_count >= 1  # OpenSSL LIBRARY
         assert report.hybrid_count >= 2               # RSA + ECDH are HYBRID
         assert report.unknown_count >= 1              # MYSTERY
+        assert report.classical_upgrade_count == 1     # SHA-256 -> SHA-384
+        assert report.direct_pqc_count == 0
 
     def test_generate_report_aggregates_target_algorithms(self):
         assets = [
@@ -1032,19 +1039,21 @@ class TestClassicallyBroken:
         asset = make_asset("MD5", PrimitiveType.HASH_FUNCTION, key_length_bits=None,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
-        assert rec.recommendation_type == PQCRecommendationType.DIRECT_PQC
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert rec.recommended_algorithm == "SHA-256"
 
     def test_sha1_gets_sha256(self):
         asset = make_asset("SHA-1", PrimitiveType.HASH_FUNCTION, key_length_bits=None,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert rec.recommended_algorithm == "SHA-256"
 
     def test_des_symmetric_gets_aes256(self):
         asset = make_asset("DES", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=56,
                            quantum_threat_type="CLASSICALLY_BROKEN")
         rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
         assert "AES-256" in (rec.recommended_algorithm or "")
 
     def test_classically_broken_has_priority_limitation(self):
@@ -1105,7 +1114,7 @@ class TestMacKdf:
         # HMAC-MD5 normalization: MD5 is in CLASSICALLY_BROKEN set
         # Exact outcome depends on algorithm name matching
         assert rec.recommendation_type in (
-            PQCRecommendationType.DIRECT_PQC,
+            PQCRecommendationType.CLASSICAL_UPGRADE,
             PQCRecommendationType.NO_MIGRATION_REQUIRED,
         )
 
@@ -1197,6 +1206,7 @@ class TestFullPipelineIntegration:
         assert report.total_assets == 147
         count_sum = (
             report.direct_pqc_count
+            + report.classical_upgrade_count
             + report.hybrid_count
             + report.already_pqc_count
             + report.no_migration_required_count
@@ -1243,3 +1253,167 @@ class TestFullPipelineIntegration:
         ]
         # Python crypto samples include RSA, ECDH, ECDSA -> at least some should require PQC migration
         assert len(pqc_requiring) > 0, "Expected some PQC-requiring recommendations from test samples"
+
+
+# ===========================================================================
+# 21. Phase 3.3 Corrective Pass: Classical Upgrade Terminology
+# ===========================================================================
+
+class TestClassicalUpgradeCorrectivePass:
+    """
+    Dedicated test suite for Phase 3.3 corrective pass.
+    Verifies that classical strengthening recommendations are labeled CLASSICAL_UPGRADE,
+    never DIRECT_PQC, while genuine PQC migrations remain unchanged.
+    """
+    def setup_method(self):
+        self.engine = RecommendationEngine()
+
+    def test_sha256_to_sha384_is_classical_upgrade(self):
+        asset = make_asset("SHA-256", PrimitiveType.HASH_FUNCTION, key_length_bits=None,
+                           quantum_vulnerable=True, quantum_threat_type="GROVER_BIT_HALVING")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert rec.recommended_algorithm == "SHA-384"
+        assert rec.pqc_standard is None
+
+    def test_aes128_to_aes256_gcm_is_classical_upgrade(self):
+        asset = make_asset("AES-128", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128,
+                           quantum_vulnerable=True, quantum_threat_type="GROVER_BIT_HALVING")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert "256" in (rec.recommended_algorithm or "")
+        assert rec.pqc_standard is None
+
+    def test_des_to_aes256_gcm_is_classical_upgrade(self):
+        asset = make_asset("DES", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=56,
+                           quantum_vulnerable=True, quantum_threat_type="CLASSICALLY_BROKEN")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert rec.recommended_algorithm == "AES-256-GCM"
+        assert rec.pqc_standard is None
+
+    def test_3des_to_aes256_gcm_is_classical_upgrade(self):
+        asset = make_asset("3DES", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=168,
+                           quantum_vulnerable=True, quantum_threat_type="CLASSICALLY_BROKEN")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert rec.recommended_algorithm == "AES-256-GCM"
+        assert rec.pqc_standard is None
+
+    def test_md5_to_sha256_is_classical_upgrade(self):
+        asset = make_asset("MD5", PrimitiveType.HASH_FUNCTION, key_length_bits=None,
+                           quantum_vulnerable=True, quantum_threat_type="CLASSICALLY_BROKEN")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert rec.recommended_algorithm == "SHA-256"
+        assert rec.pqc_standard is None
+
+    def test_sha1_to_sha256_is_classical_upgrade(self):
+        asset = make_asset("SHA-1", PrimitiveType.HASH_FUNCTION, key_length_bits=None,
+                           quantum_vulnerable=True, quantum_threat_type="CLASSICALLY_BROKEN")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE
+        assert rec.recommended_algorithm == "SHA-256"
+        assert rec.pqc_standard is None
+
+    def test_genuine_pqc_rsa_encryption_remains_hybrid(self):
+        asset = make_asset("RSA", PrimitiveType.ASYMMETRIC_ENCRYPTION, key_length_bits=2048)
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.HYBRID
+        assert rec.pqc_standard == FIPS_203
+        assert "ML-KEM" in (rec.recommended_algorithm or "")
+
+    def test_genuine_pqc_ecdh_remains_hybrid(self):
+        asset = make_asset("ECDH", PrimitiveType.KEY_EXCHANGE, curve="secp256r1")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.HYBRID
+        assert rec.pqc_standard == FIPS_203
+        assert "ML-KEM" in (rec.recommended_algorithm or "")
+
+    def test_genuine_pqc_ecdsa_remains_hybrid(self):
+        asset = make_asset("ECDSA", PrimitiveType.DIGITAL_SIGNATURE, curve="secp256r1")
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.HYBRID
+        assert rec.pqc_standard == FIPS_204
+        assert "ML-DSA" in (rec.recommended_algorithm or "")
+
+    def test_genuine_pqc_dsa_remains_direct_pqc(self):
+        asset = make_asset("DSA", PrimitiveType.DIGITAL_SIGNATURE, key_length_bits=2048)
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.DIRECT_PQC
+        assert rec.pqc_standard == FIPS_204
+        assert "ML-DSA" in (rec.recommended_algorithm or "")
+
+    def test_genuine_pqc_rsa_signature_remains_direct_pqc(self):
+        asset = make_asset("RSA", PrimitiveType.DIGITAL_SIGNATURE, key_length_bits=2048)
+        rec = self.engine.recommend(asset)
+        assert rec.recommendation_type == PQCRecommendationType.DIRECT_PQC
+        assert rec.pqc_standard == FIPS_204
+        assert "ML-DSA" in (rec.recommended_algorithm or "")
+
+    def test_genuine_pqc_already_pqc_remains_already_pqc(self):
+        for algo, prim, std in [
+            ("ML-KEM-768", PrimitiveType.KEY_EXCHANGE, FIPS_203),
+            ("ML-DSA-65", PrimitiveType.DIGITAL_SIGNATURE, FIPS_204),
+            ("SLH-DSA-SHA2-128s", PrimitiveType.DIGITAL_SIGNATURE, FIPS_205),
+        ]:
+            asset = make_asset(algo, prim, quantum_vulnerable=False,
+                               quantum_threat_type="QUANTUM_RESISTANT")
+            rec = self.engine.recommend(asset)
+            assert rec.recommendation_type == PQCRecommendationType.ALREADY_PQC
+            assert rec.pqc_standard == std
+            assert rec.recommended_algorithm is None
+
+    def test_regression_no_classical_upgrade_mapping_is_labeled_direct_pqc(self):
+        """
+        Regression Test:
+        Prove that NO classical cryptographic strengthening mapping returns DIRECT_PQC.
+        Every hash strengthening, symmetric key-length upgrade, and classically broken
+        cipher/hash upgrade MUST be CLASSICAL_UPGRADE (or NO_MIGRATION_REQUIRED).
+        """
+        classical_test_assets = [
+            make_asset("SHA-256", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("SHA-224", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("MD5", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("SHA-1", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("MD4", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("RIPEMD-160", PrimitiveType.HASH_FUNCTION, key_length_bits=None),
+            make_asset("AES-128", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128),
+            make_asset("AES-128-CBC", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128),
+            make_asset("AES-128-GCM", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128),
+            make_asset("DES", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=56),
+            make_asset("3DES", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=168),
+            make_asset("RC4", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128),
+            make_asset("RC2", PrimitiveType.SYMMETRIC_CIPHER, key_length_bits=128),
+            make_asset("HMAC-MD5", PrimitiveType.MAC, key_length_bits=None),
+        ]
+
+        for asset in classical_test_assets:
+            rec = self.engine.recommend(asset)
+            assert rec.recommendation_type != PQCRecommendationType.DIRECT_PQC, (
+                f"REGRESSION: Classical asset '{asset.algorithm}' ({asset.primitive_type.value}) "
+                f"was incorrectly labeled DIRECT_PQC instead of CLASSICAL_UPGRADE!"
+            )
+            # If an upgrade is recommended, it must be CLASSICAL_UPGRADE
+            if rec.recommended_algorithm is not None:
+                assert rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE, (
+                    f"Asset '{asset.algorithm}' received recommended_algorithm='{rec.recommended_algorithm}' "
+                    f"but recommendation_type is '{rec.recommendation_type.value}', expected CLASSICAL_UPGRADE!"
+                )
+                assert rec.pqc_standard is None, (
+                    f"Asset '{asset.algorithm}' has pqc_standard='{rec.pqc_standard}' which should be None!"
+                )
+
+    def test_classical_upgrade_serialization_in_to_dict(self):
+        asset = make_asset("SHA-256", PrimitiveType.HASH_FUNCTION, key_length_bits=None)
+        rec = self.engine.recommend(asset)
+        d = rec.to_dict()
+        assert d["recommendation_type"] == "CLASSICAL_UPGRADE"
+        assert d["recommended_algorithm"] == "SHA-384"
+        assert d["pqc_standard"] is None
+
+        # Verify JSON serializability
+        encoded = json.dumps(d)
+        parsed = json.loads(encoded)
+        assert parsed["recommendation_type"] == "CLASSICAL_UPGRADE"
+

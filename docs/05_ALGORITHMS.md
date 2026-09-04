@@ -315,18 +315,18 @@ Step 2: Not Applicable?
 
 Step 3: Hash Functions
     IF primitive_type == HASH_FUNCTION:
-        IF classically broken (MD5, SHA-1): RETURN DIRECT_PQC (-> SHA-256)
-        IF in HASH_UPGRADE_MAP: RETURN DIRECT_PQC (-> SHA-384 for SHA-256)
+        IF classically broken (MD5, SHA-1): RETURN CLASSICAL_UPGRADE (-> SHA-256)
+        IF in HASH_UPGRADE_MAP: RETURN CLASSICAL_UPGRADE (-> SHA-384 for SHA-256)
         ELSE: RETURN NO_MIGRATION_REQUIRED (SHA-384, SHA-512 are adequate)
 
 Step 4: Symmetric Ciphers
     IF primitive_type == SYMMETRIC_CIPHER:
-        IF classically broken (DES, 3DES, RC4): RETURN DIRECT_PQC (-> AES-256-GCM)
+        IF classically broken (DES, 3DES, RC4): RETURN CLASSICAL_UPGRADE (-> AES-256-GCM)
         IF key_length_bits >= 256: RETURN NO_MIGRATION_REQUIRED
-        IF key_length_bits < 256 OR "128" in name: RETURN DIRECT_PQC (-> AES-256-GCM)
+        IF key_length_bits < 256 OR "128" in name: RETURN CLASSICAL_UPGRADE (-> AES-256-GCM)
 
 Step 5: MAC / KDF
-    IF classically broken base (HMAC-MD5): RETURN DIRECT_PQC (-> HMAC-SHA-256)
+    IF classically broken base (HMAC-MD5): RETURN CLASSICAL_UPGRADE (-> HMAC-SHA-256)
     ELSE: RETURN NO_MIGRATION_REQUIRED
 
 Step 6: Certificates
@@ -374,7 +374,7 @@ Recommendation = f(algorithm, primitive_type, key_length_bits, curve)
 
 #### Output Contract
 
-`PQCRecommendation` dataclass fields: `asset_id`, `current_algorithm`, `current_primitive`, `recommendation_type` (DIRECT_PQC|HYBRID|ALREADY_PQC|NO_MIGRATION_REQUIRED|UNKNOWN), `recommended_algorithm`, `pqc_standard`, `hybrid_recommendation`, `rationale` (list), `assumptions` (list), `limitations` (list), `confidence` (HIGH|MEDIUM|LOW|INSUFFICIENT_DATA), `migration_complexity` (LOW|MEDIUM|HIGH), `guidance_steps` (list).
+`PQCRecommendation` dataclass fields: `asset_id`, `current_algorithm`, `current_primitive`, `recommendation_type` (DIRECT_PQC|CLASSICAL_UPGRADE|HYBRID|ALREADY_PQC|NO_MIGRATION_REQUIRED|UNKNOWN), `recommended_algorithm`, `pqc_standard`, `hybrid_recommendation`, `rationale` (list), `assumptions` (list), `limitations` (list), `confidence` (HIGH|MEDIUM|LOW|INSUFFICIENT_DATA), `migration_complexity` (LOW|MEDIUM|HIGH), `guidance_steps` (list).
 
 * **Determinism Invariants:** `recommend()` is pure functional, `recommend_all()` sorts by `asset_id`, no datetime.now() or randomness.
 * **No-Fabrication Policy:** Unknown algorithms receive `UNKNOWN` with `recommended_algorithm = None`. Missing key sizes are logged as assumptions with default policy applied.

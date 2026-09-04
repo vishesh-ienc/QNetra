@@ -544,7 +544,7 @@ Milestone 3.3 requires a deterministic PQC recommendation engine that maps class
 Implemented `core/recommendation_engine/` with four components:
 1. **`models.py`**: Pure Python dataclass output models (`PQCRecommendation`, `PQCRecommendationReport`, `AssetRecommendationDetail`). No Pydantic, consistent with risk_engine and mosca_engine patterns.
 2. **`knowledge.py`**: Centralized, authoritative tables: NIST PQC algorithm constants, SHOR-vulnerable family sets, classically-broken algorithm sets, hash/symmetric upgrade maps, hybrid construction strings, parameter selection thresholds, rationale templates. Single source of truth; no scattered magic strings.
-3. **`mapper.py`**: Pure stateless `map_asset_to_recommendation()` function. Routing priority: (1) Already PQC → ALREADY_PQC, (2) Not-applicable primitives → NO_MIGRATION_REQUIRED, (3) Hash functions → hash family upgrade, (4) Symmetric ciphers → key-length upgrade, (5) MACs/KDFs → NO_MIGRATION_REQUIRED, (6) Certificates → ML-DSA HYBRID, (7) Digital signatures → ML-DSA HYBRID/DIRECT_PQC, (8) Key exchange/asymmetric enc. → ML-KEM HYBRID, (9) Unknown → UNKNOWN.
+3. **`mapper.py`**: Pure stateless `map_asset_to_recommendation()` function. Routing priority: (1) Already PQC → ALREADY_PQC, (2) Not-applicable primitives → NO_MIGRATION_REQUIRED, (3) Classically-broken algorithms → CLASSICAL_UPGRADE, (4) Hash functions → CLASSICAL_UPGRADE or NO_MIGRATION_REQUIRED, (5) Symmetric ciphers → CLASSICAL_UPGRADE or NO_MIGRATION_REQUIRED, (6) MACs/KDFs → NO_MIGRATION_REQUIRED (or CLASSICAL_UPGRADE if broken), (7) Certificates → ML-DSA HYBRID, (8) Digital signatures → ML-DSA HYBRID/DIRECT_PQC, (9) Key exchange/asymmetric enc. → ML-KEM HYBRID, (10) Unknown → UNKNOWN.
 4. **`engine.py`**: `RecommendationEngine` orchestrator with `recommend()` (pure single-asset), `recommend_all()` (batch, sorted by asset_id), `generate_report()` (aggregate). No input mutation.
 
 #### Reasoning
@@ -565,9 +565,17 @@ Implemented `core/recommendation_engine/` with four components:
 #### Consequences
 * Positive: Fully deterministic; given identical input, output is identical across any number of executions.
 * Positive: Risk Engine and Mosca Engine independence enforced architecturally, not by convention.
-* Positive: No-fabrication policy validated by 104 tests including UNKNOWN routing and missing key size coverage.
+* Positive: No-fabrication policy validated by 118 tests including UNKNOWN routing and missing key size coverage.
 * Positive: Full pipeline validated: 289 → 147 → 147 → 147 → 147 → 147 (Findings → Assets → Classified → Risk → Mosca → Recommendations).
-* Trade-off: Hash functions and symmetric ciphers receive upgrade recommendations (not ML-KEM/ML-DSA). This is correct per NIST guidance but callers must understand the distinction.
+* Positive: Classical strengthening (SHA-256 → SHA-384, AES-128 → AES-256, DES → AES-256-GCM) is explicitly categorized as `CLASSICAL_UPGRADE`, preventing frontend or audit misinterpretation as PQC algorithms.
+
+#### Addendum (Phase 3.3 Corrective Pass — Recommendation Type Terminology)
+* **Date:** 2026-09-04
+* Disambiguated classical cryptographic strengthening from PQC migration.
+* Introduced `PQCRecommendationType.CLASSICAL_UPGRADE` as a distinct recommendation outcome.
+* Mappings updated: SHA-256 → SHA-384, AES-128 → AES-256-GCM, DES/3DES → AES-256-GCM, MD5/SHA-1 → SHA-256, and HMAC-MD5 → HMAC-SHA-256 all classified as `CLASSICAL_UPGRADE`.
+* Genuine PQC migrations (RSA, ECDH, ECDSA, DSA, Ed25519) strictly preserved as `HYBRID`, `DIRECT_PQC` (DSA/RSA-sign only), or `ALREADY_PQC`.
+* Added `classical_upgrade_count` to `PQCRecommendationReport` dataclass and dictionary serialization.
 
 #### Related Modules / Data Contracts
 * `core/recommendation_engine/` (`engine.py`, `mapper.py`, `models.py`, `knowledge.py`, `__init__.py`), `docs/05_ALGORITHMS.md` (Alg-08), `docs/06_API_AND_DATA_CONTRACTS.md` (Section 2.5), `docs/10_API_CONTRACT.md` (Section 13).

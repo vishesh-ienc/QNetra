@@ -39,12 +39,14 @@ class PQCRecommendationType(str, Enum):
 
     Values:
       DIRECT_PQC          : Asset should be replaced with a standardized NIST PQC algorithm directly.
+      CLASSICAL_UPGRADE   : Weak or insufficient classical primitive should be upgraded to a stronger classical primitive.
       HYBRID              : Asset should transition via a hybrid classical + PQC construction.
       ALREADY_PQC         : Asset is already using a standardized NIST PQC algorithm (FIPS 203/204/205).
       NO_MIGRATION_REQUIRED: Asset is not subject to PQC migration (library, PRNG, or non-applicable).
       UNKNOWN             : Insufficient information to produce a reliable recommendation.
     """
     DIRECT_PQC = "DIRECT_PQC"
+    CLASSICAL_UPGRADE = "CLASSICAL_UPGRADE"
     HYBRID = "HYBRID"
     ALREADY_PQC = "ALREADY_PQC"
     NO_MIGRATION_REQUIRED = "NO_MIGRATION_REQUIRED"
@@ -180,6 +182,8 @@ class PQCRecommendationReport:
           Total number of CryptoAssets analyzed.
       direct_pqc_count:
           Count of assets with DIRECT_PQC recommendation.
+      classical_upgrade_count:
+          Count of assets with CLASSICAL_UPGRADE recommendation (strengthening classical crypto).
       hybrid_count:
           Count of assets with HYBRID recommendation.
       already_pqc_count:
@@ -205,6 +209,7 @@ class PQCRecommendationReport:
     already_pqc_count: int
     no_migration_required_count: int
     unknown_count: int
+    classical_upgrade_count: int = 0
     recommendations_by_target_algorithm: dict[str, int] = field(default_factory=dict)
     recommendations_by_current_algorithm: dict[str, int] = field(default_factory=dict)
     recommendations_by_primitive: dict[str, int] = field(default_factory=dict)
@@ -216,6 +221,7 @@ class PQCRecommendationReport:
         return {
             "total_assets": self.total_assets,
             "direct_pqc_count": self.direct_pqc_count,
+            "classical_upgrade_count": self.classical_upgrade_count,
             "hybrid_count": self.hybrid_count,
             "already_pqc_count": self.already_pqc_count,
             "no_migration_required_count": self.no_migration_required_count,

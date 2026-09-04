@@ -147,6 +147,7 @@ class RecommendationEngine:
 
         # Initialize distribution counters
         direct_pqc_count = 0
+        classical_upgrade_count = 0
         hybrid_count = 0
         already_pqc_count = 0
         no_migration_required_count = 0
@@ -160,6 +161,8 @@ class RecommendationEngine:
             # Count by recommendation type
             if rec.recommendation_type == PQCRecommendationType.DIRECT_PQC:
                 direct_pqc_count += 1
+            elif rec.recommendation_type == PQCRecommendationType.CLASSICAL_UPGRADE:
+                classical_upgrade_count += 1
             elif rec.recommendation_type == PQCRecommendationType.HYBRID:
                 hybrid_count += 1
             elif rec.recommendation_type == PQCRecommendationType.ALREADY_PQC:
@@ -206,6 +209,7 @@ class RecommendationEngine:
         return PQCRecommendationReport(
             total_assets=total_assets,
             direct_pqc_count=direct_pqc_count,
+            classical_upgrade_count=classical_upgrade_count,
             hybrid_count=hybrid_count,
             already_pqc_count=already_pqc_count,
             no_migration_required_count=no_migration_required_count,

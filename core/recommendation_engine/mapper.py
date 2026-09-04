@@ -330,9 +330,10 @@ def _map_hash_function(asset: CryptoAsset) -> PQCRecommendation:
     Map a hash function to an appropriate upgrade recommendation.
 
     Hash functions are NOT replaced by ML-KEM/ML-DSA. They are upgraded
-    within the same hash family (e.g. SHA-256 -> SHA-384).
+    within the same hash family (e.g. SHA-256 -> SHA-384) or to SHA-256
+    if classically broken (MD5, SHA-1 -> SHA-256).
 
-    Classically-broken hashes (MD5, SHA-1) are flagged for immediate classical upgrade.
+    These are CLASSICAL_UPGRADE recommendations, NOT direct PQC algorithms.
     """
     alg_upper = asset.algorithm.upper()
 
@@ -347,7 +348,7 @@ def _map_hash_function(asset: CryptoAsset) -> PQCRecommendation:
             asset_id=asset.asset_id,
             current_algorithm=asset.algorithm,
             current_primitive=asset.primitive_type.value,
-            recommendation_type=PQCRecommendationType.DIRECT_PQC,
+            recommendation_type=PQCRecommendationType.CLASSICAL_UPGRADE,
             recommended_algorithm=recommended,
             pqc_standard=None,
             hybrid_recommendation=None,
@@ -386,7 +387,7 @@ def _map_hash_function(asset: CryptoAsset) -> PQCRecommendation:
     rationale = [
         RATIONALE_HASH_GROVER.format(algorithm=asset.algorithm),
         f"Recommended upgrade: {recommended} (stronger hash within the SHA-2 family). "
-        f"This is a hash length upgrade, not an algorithm replacement. "
+        f"This is a classical hash length upgrade, not an algorithm replacement. "
         f"No PQC KEM or DSA algorithm is required for hash function migration.",
     ]
 
@@ -394,7 +395,7 @@ def _map_hash_function(asset: CryptoAsset) -> PQCRecommendation:
         asset_id=asset.asset_id,
         current_algorithm=asset.algorithm,
         current_primitive=asset.primitive_type.value,
-        recommendation_type=PQCRecommendationType.DIRECT_PQC,
+        recommendation_type=PQCRecommendationType.CLASSICAL_UPGRADE,
         recommended_algorithm=recommended,
         pqc_standard=None,
         hybrid_recommendation=None,
@@ -412,7 +413,10 @@ def _map_symmetric_cipher(asset: CryptoAsset) -> PQCRecommendation:
     Map a symmetric cipher to a key-length upgrade recommendation.
 
     Symmetric ciphers are NOT replaced by ML-KEM/ML-DSA. They are upgraded
-    to 256-bit keys (AES-128 -> AES-256) to maintain post-Grover security.
+    to 256-bit keys (AES-128 -> AES-256) to maintain post-Grover security,
+    or from broken ciphers (DES, 3DES) to AES-256-GCM.
+
+    These are CLASSICAL_UPGRADE recommendations, NOT direct PQC algorithms.
     """
     alg_upper = asset.algorithm.upper()
 
@@ -426,7 +430,7 @@ def _map_symmetric_cipher(asset: CryptoAsset) -> PQCRecommendation:
             asset_id=asset.asset_id,
             current_algorithm=asset.algorithm,
             current_primitive=asset.primitive_type.value,
-            recommendation_type=PQCRecommendationType.DIRECT_PQC,
+            recommendation_type=PQCRecommendationType.CLASSICAL_UPGRADE,
             recommended_algorithm="AES-256-GCM",
             pqc_standard=None,
             hybrid_recommendation=None,
@@ -493,7 +497,7 @@ def _map_symmetric_cipher(asset: CryptoAsset) -> PQCRecommendation:
     rationale = [
         RATIONALE_SYMMETRIC_GROVER.format(algorithm=asset.algorithm),
         f"Recommended upgrade: {recommended} (256-bit symmetric key). "
-        f"This is a key-length upgrade, not an algorithm change. "
+        f"This is a classical key-length upgrade, not an algorithm change. "
         f"No PQC KEM or DSA replacement is required for symmetric cipher migration.",
     ]
 
@@ -501,7 +505,7 @@ def _map_symmetric_cipher(asset: CryptoAsset) -> PQCRecommendation:
         asset_id=asset.asset_id,
         current_algorithm=asset.algorithm,
         current_primitive=asset.primitive_type.value,
-        recommendation_type=PQCRecommendationType.DIRECT_PQC,
+        recommendation_type=PQCRecommendationType.CLASSICAL_UPGRADE,
         recommended_algorithm=recommended,
         pqc_standard=None,
         hybrid_recommendation=None,
@@ -668,7 +672,7 @@ def map_asset_to_recommendation(asset: CryptoAsset) -> PQCRecommendation:
     Routing Priority:
       1. Already PQC (ML-KEM, ML-DSA, SLH-DSA) -> ALREADY_PQC
       2. NOT_APPLICABLE primitives (LIBRARY, RANDOM) -> NO_MIGRATION_REQUIRED
-      3. Classically-broken algorithms -> DIRECT_PQC (upgrade to classical-secure first)
+      3. Classically-broken algorithms -> CLASSICAL_UPGRADE (upgrade to classical-secure first)
       4. Shor-vulnerable by primitive type:
          - KEY_EXCHANGE -> ML-KEM HYBRID
          - ASYMMETRIC_ENCRYPTION (RSA) -> ML-KEM HYBRID
@@ -676,8 +680,8 @@ def map_asset_to_recommendation(asset: CryptoAsset) -> PQCRecommendation:
          - CERTIFICATE -> ML-DSA HYBRID
          - KEY_MATERIAL -> route by algorithm family
       5. Grover-impacted:
-         - HASH_FUNCTION -> hash family upgrade (DIRECT_PQC or NO_MIGRATION_REQUIRED)
-         - SYMMETRIC_CIPHER -> key-length upgrade (DIRECT_PQC or NO_MIGRATION_REQUIRED)
+         - HASH_FUNCTION -> hash family upgrade (CLASSICAL_UPGRADE or NO_MIGRATION_REQUIRED)
+         - SYMMETRIC_CIPHER -> key-length upgrade (CLASSICAL_UPGRADE or NO_MIGRATION_REQUIRED)
          - MAC/KDF -> NO_MIGRATION_REQUIRED (key-length upgrade, not PQC replacement)
       6. Not classifiable -> UNKNOWN
 
@@ -725,7 +729,7 @@ def map_asset_to_recommendation(asset: CryptoAsset) -> PQCRecommendation:
                 asset_id=asset.asset_id,
                 current_algorithm=algorithm,
                 current_primitive=primitive.value,
-                recommendation_type=PQCRecommendationType.DIRECT_PQC,
+                recommendation_type=PQCRecommendationType.CLASSICAL_UPGRADE,
                 recommended_algorithm="HMAC-SHA-256",
                 pqc_standard=None,
                 hybrid_recommendation=None,

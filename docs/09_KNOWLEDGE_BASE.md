@@ -126,7 +126,23 @@ In August 2024, the National Institute of Standards and Technology (NIST) releas
 
 ---
 
-## 5. Cryptographic Bill of Materials (CBOM) & CycloneDX
+## 5. Post-Quantum Migration vs. Classical Cryptographic Strengthening
+
+A critical distinction in post-quantum readiness is distinguishing genuine **PQC migration** from **classical cryptographic strengthening**:
+
+| Dimension | Post-Quantum Migration (`DIRECT_PQC` / `HYBRID`) | Classical Strengthening (`CLASSICAL_UPGRADE`) |
+| :--- | :--- | :--- |
+| **Problem Addressed** | Shor's algorithm polynomial break of discrete log & integer factorization | Grover's $\mathcal{O}(\sqrt{N})$ search speedup OR classical algorithmic collision/structural breaks |
+| **Affected Primitives** | Public-key cryptosystems: RSA, ECDH, DH, ECDSA, DSA, Ed25519 | Symmetric ciphers (AES-128, DES, 3DES) and hash functions (SHA-256, MD5, SHA-1) |
+| **Remediation Action** | Replace with or hybridize with NIST FIPS 203/204/205 algorithms (ML-KEM, ML-DSA, SLH-DSA) | Increase key size (AES-128 → AES-256-GCM), increase output length (SHA-256 → SHA-384), or replace broken primitives with modern classical standards (MD5 → SHA-256) |
+| **Cryptographic Nature** | **Post-Quantum Cryptography**: lattice-based or hash-based math resistant to both classical and quantum attacks | **Classical Cryptography**: well-understood classical algorithms operating at higher parameter strengths |
+| **QNetra Classification** | `DIRECT_PQC` (direct replacement) or `HYBRID` (dual-encapsulation / dual-signature) | `CLASSICAL_UPGRADE` (never labeled as PQC) |
+
+This explicit classification prevents security dashboards, auditors, and engineering teams from misinterpreting classical upgrades (e.g. SHA-256 → SHA-384 or AES-128 → AES-256-GCM) as post-quantum algorithms.
+
+---
+
+## 6. Cryptographic Bill of Materials (CBOM) & CycloneDX
 
 * **Concept:** A formal, machine-readable inventory of all cryptographic assets, algorithms, certificates, keys, and protocols within a software artifact.
 * **CycloneDX 1.6 Cryptography Extension:**
@@ -141,7 +157,7 @@ In August 2024, the National Institute of Standards and Technology (NIST) releas
 
 ---
 
-## 6. Authoritative References & Standards
+## 7. Authoritative References & Standards
 
 1. **NIST FIPS 203:** *Module-Lattice-Based Key-Encapsulation Mechanism Standard (ML-KEM)* (August 2024).
 2. **NIST FIPS 204:** *Module-Lattice-Based Digital Signature Standard (ML-DSA)* (August 2024).

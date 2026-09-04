@@ -226,8 +226,9 @@
     * Key exchange/KEM (ECDH, DH, RSA-KEM) → ML-KEM (NIST FIPS 203) via Hybrid X25519+ML-KEM-768.
     * Digital signatures (ECDSA, DSA, Ed25519, RSA-sign) → ML-DSA (NIST FIPS 204); ECDSA/Ed25519 → Hybrid Ed25519+ML-DSA-65.
     * Certificates → ML-DSA Hybrid with CA infrastructure guidance.
-  * Recommend hash family upgrades for Grover-impacted hash functions (SHA-256 → SHA-384; no KEM/DSA).
-  * Recommend symmetric key-length upgrades for Grover-impacted ciphers (AES-128 → AES-256; no algorithm change).
+  * Recommend hash family upgrades for Grover-impacted hash functions (SHA-256 → SHA-384) as CLASSICAL_UPGRADE (not DIRECT_PQC).
+  * Recommend symmetric key-length upgrades for Grover-impacted ciphers (AES-128 → AES-256) and broken ciphers (DES/3DES → AES-256-GCM) as CLASSICAL_UPGRADE (not DIRECT_PQC).
+  * Explicitly distinguish post-quantum migration (DIRECT_PQC, HYBRID) from classical cryptographic strengthening (CLASSICAL_UPGRADE).
   * Detect already-PQC assets (ML-KEM, ML-DSA, SLH-DSA) and return ALREADY_PQC (no unnecessary replacement).
   * Return NO_MIGRATION_REQUIRED for non-applicable assets (Library, Random, Protocol).
   * Return UNKNOWN for unrecognized algorithms without fabricating recommendations.
@@ -240,7 +241,7 @@
 * **Dependencies:** `core.models` (CryptoAsset, PrimitiveType).
 * **Related Data Contracts:** `PQCRecommendationReport` (docs/06 §2.5), `PQCRecommendation`.
 * **Key Files:**
-  * `core/recommendation_engine/models.py` — `PQCRecommendationType`, `MigrationComplexity`, `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport` dataclasses.
+  * `core/recommendation_engine/models.py` — `PQCRecommendationType` (6 outcomes including `CLASSICAL_UPGRADE`), `MigrationComplexity`, `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport` dataclasses.
   * `core/recommendation_engine/knowledge.py` — PQC algorithm definitions, mapping tables, parameter selection policy, hybrid constructions, rationale templates.
   * `core/recommendation_engine/mapper.py` — Pure stateless `map_asset_to_recommendation()` routing function.
   * `core/recommendation_engine/engine.py` — `RecommendationEngine`: `recommend()`, `recommend_all()`, `generate_report()` (pure functional, no mutation).
@@ -248,12 +249,13 @@
 * **Architecture Invariants:**
   * `recommend()` and `recommend_all()` are PURELY FUNCTIONAL — never mutate input CryptoAsset.
   * Recommendation routing is independent of `risk_score` and Mosca urgency fields.
+  * Classical strengthening (hashes, symmetric ciphers) is strictly classified as `CLASSICAL_UPGRADE`, never `DIRECT_PQC`.
   * Only finalized NIST PQC standards used as primary recommendations: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205).
   * Hybrid constructions: only X25519+ML-KEM-768 and Ed25519+ML-DSA-65 explicitly supported.
   * No datetime.now(), no non-deterministic logic.
-* **Status:** Implemented (`v1.0.0` — Milestone 3.3)
+* **Status:** Implemented (`v1.1.0` — Milestone 3.3 Corrective Pass)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_core/test_recommendation_engine.py` (104 tests: algorithm mapping, PQC detection, hybrid constructions, parameter selection, explainability, independence, determinism, no-mutation, serialization, batch, full pipeline 289→147→147→147→147→147).
+* **Tests:** `tests/test_core/test_recommendation_engine.py` (118 tests: algorithm mapping, classical upgrade distinction, regression test, PQC detection, hybrid constructions, parameter selection, explainability, independence, determinism, no-mutation, serialization, batch, full pipeline 289→147→147→147→147→147).
 
 ---
 

@@ -116,14 +116,14 @@ Phase 3 complete. All three intelligence engines implemented. Transitioning to P
    * [x] No-mutation: assess() is purely functional.
    * [x] Deterministic: no datetime.now() calls.
    * [x] 95 tests, 408 total passing, 97% engine coverage.
-3. **PQC Recommendation Engine (`core/recommendation_engine`):** ✅ COMPLETE (Milestone 3.3)
-   * [x] `models.py`: `PQCRecommendationType`, `MigrationComplexity`, `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport` dataclasses.
+3. **PQC Recommendation Engine (`core/recommendation_engine`):** ✅ COMPLETE (Milestone 3.3 + Corrective Pass)
+   * [x] `models.py`: `PQCRecommendationType` (includes `CLASSICAL_UPGRADE`), `MigrationComplexity`, `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport` dataclasses.
    * [x] `knowledge.py`: NIST FIPS 203/204/205 algorithm definitions, parameter selection policy, hybrid constructions, rationale templates.
-   * [x] `mapper.py`: Pure stateless `map_asset_to_recommendation()` routing by algorithm family and primitive type.
-   * [x] `engine.py`: `RecommendationEngine.recommend()`, `recommend_all()`, `generate_report()` (pure functional, no mutation).
+   * [x] `mapper.py`: Pure stateless `map_asset_to_recommendation()` routing by algorithm family and primitive type; strictly distinguishes PQC migrations from classical strengthening (`CLASSICAL_UPGRADE`).
+   * [x] `engine.py`: `RecommendationEngine.recommend()`, `recommend_all()`, `generate_report()` (pure functional, no mutation, counts `classical_upgrade_count`).
    * [x] Strict Risk Score and Mosca Urgency independence — routing never uses `risk_score`.
    * [x] No-fabrication: unknown algorithms return UNKNOWN, missing key sizes logged as assumptions.
-   * [x] 104 tests (512 total passing, 93% recommendation engine coverage, 100% engine/models/knowledge/__init__ coverage).
+   * [x] 118 tests (526 total passing, 93% recommendation engine coverage, 100% engine/models/knowledge/__init__ coverage).
    * [x] Full pipeline validated: 289 RawFindings → 147 CryptoAssets → 147 Classified → 147 Risk → 147 Mosca → 147 Recommendations.
 
 ---
@@ -145,7 +145,7 @@ Phase 3 complete. All three intelligence engines implemented. Transitioning to P
 * **Milestone 2.3 (Complete):** CycloneDX 1.6+ CBOM Serializer (`core.cbom_generator`) — 116 new tests, 272 total, 92% coverage.
 * **Milestone 3.1 (Complete):** Deterministic Cryptographic Risk Engine (`core.risk_engine`) — 41 new tests, 313 total, 98% coverage.
 * **Milestone 3.2 (Complete):** Michele Mosca Migration Timeline Engine (`core.mosca_engine`) — 95 new tests, 408 total, 97% coverage.
-* **Milestone 3.3 (Complete ✅):** NIST PQC & Hybrid Recommendation Engine (`core.recommendation_engine`) — 104 new tests, 512 total, 93% coverage.
+* **Milestone 3.3 (Complete ✅):** NIST PQC & Hybrid Recommendation Engine (`core.recommendation_engine`) with Classical Upgrade Terminology Disambiguation — 118 tests, 526 total, 93% coverage.
 * **Milestone 4:** Full-stack integration with FastAPI backend and interactive web dashboard.
 * **Milestone 5:** End-to-end testing, audit report generation (PDF/CSV), and presentation polish.
 
@@ -155,6 +155,7 @@ Phase 3 complete. All three intelligence engines implemented. Transitioning to P
 
 | Timestamp (ISO) | Author | Change Summary | Affected Files |
 | :--- | :--- | :--- | :--- |
+| 2026-09-04T17:25:00 | AI Agent | Phase 3.3 Corrective Pass: Introduced `CLASSICAL_UPGRADE` recommendation type, remapped classical strengthenings (hashes, symmetric ciphers, classically broken), added 14 new tests (118 engine tests, 526 total passing) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_status.md`, `current_prompt_update.md` |
 | 2026-09-04T15:17:00 | AI Agent | Implemented Phase 3 Milestone 3.3: NIST PQC Recommendation Engine (models, knowledge, mapper, engine, __init__, 104 tests, 512 total passing, 93% coverage, DEC-016) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |
 | 2026-09-04T09:30:00 | AI Agent | Implemented Phase 3 Milestone 3.2: Michele Mosca Migration Engine (models, knowledge, calculator, engine, __init__, 95 tests, 408 total passing, 97% coverage, DEC-015) | `core/mosca_engine/*`, `tests/test_core/test_mosca_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |
 | 2026-09-04T01:12:00 | AI Agent | Implemented Phase 3 Milestone 3.1: Deterministic Cryptographic Risk Engine (models, knowledge, scorer, engine, 41 tests, 313 total passing, 98% risk coverage) | `core/risk_engine/*`, `tests/test_core/test_risk_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |

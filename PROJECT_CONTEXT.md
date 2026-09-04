@@ -196,16 +196,16 @@ Phase 3 Milestone 3.3: NIST FIPS 203/204/205 PQC Recommendation Engine.
   * No `datetime.now()`: all deadlines use explicit `assessment_date` from `MoscaInput`.
   * Risk independence: Mosca urgency is orthogonal to Risk Score (DEC-015).
 * **PQC Recommendation Engine (`core/recommendation_engine/`):**
-  * `RecommendationEngine`: Pure single/batch recommendation (`recommend`, `recommend_all`), aggregate `PQCRecommendationReport` generation (no asset mutation).
-  * `mapper.py`: Pure stateless `map_asset_to_recommendation()` routing by algorithm family and primitive type (9-step priority chain).
-  * `models.py`: `PQCRecommendationType` (5 outcomes), `MigrationComplexity` (3 tiers), `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport`.
+  * `RecommendationEngine`: Pure single/batch recommendation (`recommend`, `recommend_all`), aggregate `PQCRecommendationReport` generation with `classical_upgrade_count` (no asset mutation).
+  * `mapper.py`: Pure stateless `map_asset_to_recommendation()` routing by algorithm family and primitive type; strictly distinguishes PQC migrations from classical strengthening (`CLASSICAL_UPGRADE`).
+  * `models.py`: `PQCRecommendationType` (6 outcomes including `CLASSICAL_UPGRADE`), `MigrationComplexity` (3 tiers), `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport`.
   * `knowledge.py`: NIST FIPS 203/204/205 algorithm constants, parameter selection policy, hybrid construction definitions, rationale string templates.
   * Risk Score independence: recommendation routing NEVER uses `risk_score` or Mosca urgency (DEC-016).
   * No-fabrication: unknown algorithms return UNKNOWN with `recommended_algorithm=None`.
   * Only finalized NIST PQC: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205).
   * Parameter policy: ML-KEM-768 default (Cat.3); ML-KEM-1024 for RSA≥3072/ECC≥384.
   * Explicit hybrids: `X25519+ML-KEM-768` and `Ed25519+ML-DSA-65` only.
-* **Test Suite (`tests/`):** 512 passed tests, 93% recommendation engine coverage, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
+* **Test Suite (`tests/`):** 526 passed tests (118 recommendation engine tests), 93% recommendation engine coverage, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
 
 ### ○ PLANNED (Upcoming Phases)
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).
