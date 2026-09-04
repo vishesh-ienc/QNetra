@@ -44,7 +44,7 @@ Quantum Risk Engine (Deterministic Scoring)         [✓ IMPLEMENTED - Phase 3]
         ↓
 Mosca Migration Urgency Engine (X + Y > Z)          [✓ IMPLEMENTED - Phase 3]
         ↓
-PQC & Hybrid Recommendation Engine                  [○ PLANNED - Phase 3]
+PQC & Hybrid Recommendation Engine                  [✓ IMPLEMENTED - Phase 3]
         ↓
 FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
 ```
@@ -105,23 +105,23 @@ FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
 
 ```text
 CURRENT PHASE:
-Phase 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations) (IN PROGRESS)
+Phase 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations) (COMPLETE ✅)
 
 CURRENT SUB-PHASE:
-Milestones 2.1, 2.2, 2.3, 3.1, & 3.2 Complete — Normalization, Classification, CBOM, Risk Engine, Mosca Engine
-Next: Milestone 3.3 — NIST PQC & Hybrid Recommendation Engine (core.recommendation_engine)
+All Phase 3 Milestones Complete. Transitioning to Phase 4: FastAPI Backend & Interactive Web Dashboard.
 
 LAST COMPLETED:
-Phase 3 Milestone 3.2 Mosca Engine (2026-09-04):
-  - Implemented core/mosca_engine/__init__.py (public API: MoscaEngine, MoscaInput, MoscaConfig, MoscaAssessment, MoscaAssessmentReport, MoscaUrgency, HNDLExposure)
-  - Implemented core/mosca_engine/models.py (MoscaUrgency, HNDLExposure, MoscaInput, MoscaAssessment, AssetMoscaDetail, MoscaAssessmentReport)
-  - Implemented core/mosca_engine/knowledge.py (quantum scenarios, migration baselines, HNDL thresholds, urgency constants, assumption templates, MoscaConfig)
-  - Implemented core/mosca_engine/calculator.py (validate_duration, evaluate_inequality, calculate_exposure_gap, calculate_deadline, classify_hndl_exposure, classify_urgency)
-  - Implemented core/mosca_engine/engine.py (MoscaEngine: assess, assess_all, generate_report — all pure functional, no mutation, no datetime.now())
-  - Created tests/test_core/test_mosca_engine.py (95 tests, 97% Mosca engine coverage)
-  - Full test suite: 408 passed, 1 skipped, 0 failed
-  - ADR DEC-015: No-fabrication X, explicit date, Risk/Mosca independence
-  - Updated docs/04, docs/05 (Alg-07), docs/07, docs/08 (DEC-015), PROJECT_CONTEXT.md, current_status.md, current_prompt_update.md
+Phase 3 Milestone 3.3 PQC Recommendation Engine (2026-09-04):
+  - Implemented core/recommendation_engine/__init__.py (public API exports)
+  - Implemented core/recommendation_engine/models.py (PQCRecommendationType, MigrationComplexity, PQCRecommendation, AssetRecommendationDetail, PQCRecommendationReport)
+  - Implemented core/recommendation_engine/knowledge.py (NIST FIPS 203/204/205 algorithm defs, parameter selection policy, hybrid constructions, rationale templates)
+  - Implemented core/recommendation_engine/mapper.py (pure stateless map_asset_to_recommendation() routing by algorithm family + primitive type)
+  - Implemented core/recommendation_engine/engine.py (RecommendationEngine: recommend, recommend_all, generate_report — pure functional, no mutation, no risk_score coupling)
+  - Created tests/test_core/test_recommendation_engine.py (104 tests, 93% coverage, 100% engine/models/knowledge/__init__)
+  - Full pipeline validated: 289 RawFindings → 147 Assets → 147 Classified → 147 Risk → 147 Mosca → 147 Recommendations
+  - Full test suite: 512 passed, 1 skipped, 0 failed
+  - ADR DEC-016: Table-driven routing, Risk independence, No-fabrication policy
+  - Updated docs/04, docs/05 (Alg-08), docs/07, docs/08 (DEC-016), PROJECT_CONTEXT.md, current_prompt_update.md
 
 PREVIOUSLY COMPLETED:
 Phase 3 Milestone 3.1 Risk Engine (2026-09-04):
@@ -195,10 +195,19 @@ Phase 3 Milestone 3.3: NIST FIPS 203/204/205 PQC Recommendation Engine.
   * No-fabrication: protected lifetime (X) has no silent default; urgency is UNKNOWN without it.
   * No `datetime.now()`: all deadlines use explicit `assessment_date` from `MoscaInput`.
   * Risk independence: Mosca urgency is orthogonal to Risk Score (DEC-015).
-* **Test Suite (`tests/`):** 408 passed tests, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
+* **PQC Recommendation Engine (`core/recommendation_engine/`):**
+  * `RecommendationEngine`: Pure single/batch recommendation (`recommend`, `recommend_all`), aggregate `PQCRecommendationReport` generation (no asset mutation).
+  * `mapper.py`: Pure stateless `map_asset_to_recommendation()` routing by algorithm family and primitive type (9-step priority chain).
+  * `models.py`: `PQCRecommendationType` (5 outcomes), `MigrationComplexity` (3 tiers), `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport`.
+  * `knowledge.py`: NIST FIPS 203/204/205 algorithm constants, parameter selection policy, hybrid construction definitions, rationale string templates.
+  * Risk Score independence: recommendation routing NEVER uses `risk_score` or Mosca urgency (DEC-016).
+  * No-fabrication: unknown algorithms return UNKNOWN with `recommended_algorithm=None`.
+  * Only finalized NIST PQC: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205).
+  * Parameter policy: ML-KEM-768 default (Cat.3); ML-KEM-1024 for RSA≥3072/ECC≥384.
+  * Explicit hybrids: `X25519+ML-KEM-768` and `Ed25519+ML-DSA-65` only.
+* **Test Suite (`tests/`):** 512 passed tests, 93% recommendation engine coverage, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
 
 ### ○ PLANNED (Upcoming Phases)
-* **Phase 3.3:** `core.recommendation_engine` (NIST FIPS 203/204/205 algorithmic replacement mapping, hybrid scheme recommendations).
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).
 
 ---
@@ -299,8 +308,10 @@ QNetra/
 * **DEC-008:** Evolution of `RawFinding` to v1.1.0 with quantitative multi-signal confidence and parameter hints.
 * **DEC-009:** API Contract and Frontend Product Specification Frozen Before Phase 4.
 * **DEC-010:** Deterministic Normalization Architecture, Multi-Signal Aggregation, and RFC 4122 UUIDv5 Identity Strategy.
-* **DEC-011:** Additive CryptoAsset Schema Extension for Classification Fields (v1.2.0).
-* **DEC-012:** Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy.
+* **DEC-013:** CycloneDX 1.6 CBOM Generation Architecture.
+* **DEC-014:** Deterministic Cryptographic Risk Engine Architecture & Factor Model.
+* **DEC-015:** Mosca Engine Architecture — No-Fabrication X, Explicit Date, Risk Independence.
+* **DEC-016:** Recommendation Engine Architecture — Table-Driven Routing, Risk Independence, No-Fabrication.
 
 *Full Decision Records:* [`docs/08_DECISIONS_AND_LOG.md`](docs/08_DECISIONS_AND_LOG.md)
 
@@ -329,21 +340,28 @@ QNetra/
 ## 12. Immediate Next Development Steps
 
 ```text
-RECOMMENDED CONTINUATION POINT (PHASE 2):
+RECOMMENDED CONTINUATION POINT (PHASE 4):
 
-1. [COMPLETED] Implement `core/normalization/`:
-   - Input: List[RawFinding] -> Output: List[CryptoAsset]
-   - Tests: 22 unit & regression tests under `tests/test_core/test_normalization.py`.
+1. [COMPLETED] Implement `core/normalization/`
+2. [COMPLETED] Implement `core/classification/`
+3. [COMPLETED] Implement `core/cbom_generator/`
+4. [COMPLETED] Implement `core/risk_engine/`
+5. [COMPLETED] Implement `core/mosca_engine/`
+6. [COMPLETED] Implement `core/recommendation_engine/`
 
-2. [COMPLETED] Implement `core/classification/`:
-   - Tasks: Orthogonal classical & quantum threat classification, effective security bit calculation, no-fabrication policy.
-   - Tests: 54 unit tests under `tests/test_core/test_classification.py`.
+7. [NEXT] Phase 4: Implement `backend/api/` (FastAPI REST gateway)
+   - POST /api/scan  (trigger scan pipeline)
+   - GET  /api/cbom  (retrieve generated CBOM)
+   - GET  /api/risk  (retrieve risk assessment report)
+   - GET  /api/mosca (retrieve Mosca assessment report)
+   - GET  /api/recommendations (retrieve PQC recommendation report)
+   - GET  /api/export (download PDF/CSV/CBOM)
 
-3. [NEXT] Implement `core/cbom_generator/`:
-   - Tasks: Serialize CryptoAsset list into CycloneDX 1.6+ JSON & XML CBOM formats.
-   - Validation: CycloneDX 1.6 JSON Schema compliance tests.
-
-4. Advance to Phase 3 Intelligence Engines (`core/risk_engine`, `core/mosca_engine`).
+8. [NEXT] Phase 4: Implement `frontend/` (Interactive Web Dashboard)
+   - Executive summary risk scorecards
+   - Searchable/filterable CBOM table explorer
+   - Interactive Mosca timeline slider widget
+   - PQC migration guide renderer
 ```
 
 ---
@@ -356,7 +374,7 @@ IF YOU ARE A NEW AI AGENT JOINING QNETRA:
 1. Read this file (PROJECT_CONTEXT.md) to grasp the current state and architecture.
 2. Read PROJECT_RULES.md to internalize active engineering constraints.
 3. Read AGENTS.md for operational workflows and documentation responsibilities.
-4. Check Section 4 & 12 above for the exact continuation point (Phase 2 Normalization).
+4. Phase 3 is COMPLETE. Check Section 12 above for the Phase 4 continuation point.
 5. Inspect only the modules relevant to your specific assigned task.
 6. Consult detailed docs in /docs only when needed for specific schema/formula details.
 7. Run the test suite (`python -m pytest tests/`) before and after making changes.

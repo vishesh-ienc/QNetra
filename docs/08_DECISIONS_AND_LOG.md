@@ -524,7 +524,53 @@ Three critical design tensions had to be resolved:
 * Trade-off: Callers must supply `protected_lifetime_years` per asset context to obtain full assessments; without it, urgency is UNKNOWN (appropriate, not a bug).
 
 #### Related Modules / Data Contracts
-* `core/mosca_engine/` (`engine.py`, `calculator.py`, `models.py`, `knowledge.py`), `docs/05_ALGORITHMS.md` (Alg-07), `docs/06_API_AND_DATA_CONTRACTS.md` (Section 2.4), `docs/10_API_CONTRACT.md` (Section 12).
+* `core/mosca_engine/` (`engine.py`, `calculator.py`, `models.py`, `knowledge.py`), `docs/05_ALGORITHMS.md` (Alg-07), `docs/06_AP---
+
+### DEC-016 — Recommendation Engine Architecture: Table-Driven Routing, Risk Independence, No-Fabrication
+
+* **Date:** 2026-09-04
+* **Status:** Accepted
+* **Deciders:** System Architect & Core Team
+
+#### Context
+Milestone 3.3 requires a deterministic PQC recommendation engine that maps classified CryptoAssets to NIST-approved PQC migration paths. Key constraints:
+1. Recommendations must be independent of risk_score and Mosca urgency (Shor-vulnerable ECDH should get ML-KEM regardless of its risk_score).
+2. No fabrication: algorithms without known mappings must return UNKNOWN, not a guessed recommendation.
+3. Only finalized NIST PQC standards (FIPS 203/204/205) are used as primary recommendations — no draft candidates.
+4. Hybrid constructions must be explicitly enumerated and supported, not invented.
+5. Parameter selection must be policy-driven and transparent (all defaults logged as assumptions).
+
+#### Decision
+Implemented `core/recommendation_engine/` with four components:
+1. **`models.py`**: Pure Python dataclass output models (`PQCRecommendation`, `PQCRecommendationReport`, `AssetRecommendationDetail`). No Pydantic, consistent with risk_engine and mosca_engine patterns.
+2. **`knowledge.py`**: Centralized, authoritative tables: NIST PQC algorithm constants, SHOR-vulnerable family sets, classically-broken algorithm sets, hash/symmetric upgrade maps, hybrid construction strings, parameter selection thresholds, rationale templates. Single source of truth; no scattered magic strings.
+3. **`mapper.py`**: Pure stateless `map_asset_to_recommendation()` function. Routing priority: (1) Already PQC → ALREADY_PQC, (2) Not-applicable primitives → NO_MIGRATION_REQUIRED, (3) Hash functions → hash family upgrade, (4) Symmetric ciphers → key-length upgrade, (5) MACs/KDFs → NO_MIGRATION_REQUIRED, (6) Certificates → ML-DSA HYBRID, (7) Digital signatures → ML-DSA HYBRID/DIRECT_PQC, (8) Key exchange/asymmetric enc. → ML-KEM HYBRID, (9) Unknown → UNKNOWN.
+4. **`engine.py`**: `RecommendationEngine` orchestrator with `recommend()` (pure single-asset), `recommend_all()` (batch, sorted by asset_id), `generate_report()` (aggregate). No input mutation.
+
+#### Reasoning
+- **Independence from risk_score**: The recommendation routing function `f(algorithm, primitive_type, key_length_bits, curve)` does not accept or use `risk_score` or Mosca urgency. This is enforced architecturally, not just by convention.
+- **Table-driven routing**: All algorithm family memberships and mapping rules are in `knowledge.py` tables — no ad-hoc string comparisons in engine logic.
+- **No-fabrication**: Algorithms not present in any mapping table return `UNKNOWN` with `recommended_algorithm=None`. Missing key sizes apply default policy with an explicit logged assumption (not silent).
+- **Finalized standards only**: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205). No draft/candidate algorithms as primary recommendations.
+- **Explicit hybrid constructions**: Only `X25519 + ML-KEM-768` and `Ed25519 + ML-DSA-65` are supported. No hybrid constructions invented.
+- **Parameter selection policy**: ML-KEM-768 (default, NIST Cat. 3); ML-KEM-1024 for RSA ≥3072 bits or ECC ≥384-bit curves. All selections logged in `PQCRecommendation.assumptions`.
+- **Dataclass-based models**: Consistent with risk_engine and mosca_engine; no additional Pydantic dependency. `to_dict()` for JSON serialization.
+
+#### Alternatives Considered
+* **Rule-based DSL engine**: More flexible but significantly more complex to implement and audit.
+* **ML-based classification**: Rejected. Would violate no-fabrication policy and determinism requirements.
+* **Risk-score-driven recommendations**: Rejected. A low-risk RSA-2048 asset still requires ML-KEM migration; risk magnitude doesn't change the migration target.
+* **Draft candidate algorithms (BIKE, HQC, NTRU)**: Rejected. Only finalized FIPS 2024 standards used as primary recommendations.
+
+#### Consequences
+* Positive: Fully deterministic; given identical input, output is identical across any number of executions.
+* Positive: Risk Engine and Mosca Engine independence enforced architecturally, not by convention.
+* Positive: No-fabrication policy validated by 104 tests including UNKNOWN routing and missing key size coverage.
+* Positive: Full pipeline validated: 289 → 147 → 147 → 147 → 147 → 147 (Findings → Assets → Classified → Risk → Mosca → Recommendations).
+* Trade-off: Hash functions and symmetric ciphers receive upgrade recommendations (not ML-KEM/ML-DSA). This is correct per NIST guidance but callers must understand the distinction.
+
+#### Related Modules / Data Contracts
+* `core/recommendation_engine/` (`engine.py`, `mapper.py`, `models.py`, `knowledge.py`, `__init__.py`), `docs/05_ALGORITHMS.md` (Alg-08), `docs/06_API_AND_DATA_CONTRACTS.md` (Section 2.5), `docs/10_API_CONTRACT.md` (Section 13).
 
 ---
 
@@ -547,4 +593,4 @@ Three critical design tensions had to be resolved:
 | **DEC-013** | CycloneDX 1.6 CBOM Generation Architecture | 2026-09-04 | Accepted |
 | **DEC-014** | Deterministic Cryptographic Risk Engine Architecture & Factor Model | 2026-09-04 | Accepted |
 | **DEC-015** | Mosca Engine Architecture: No-Fabrication X, Explicit Date, Risk Independence | 2026-09-04 | Accepted |
-
+| **DEC-016** | Recommendation Engine Architecture: Table-Driven Routing, Risk Independence, No-Fabrication | 2026-09-04 | Accepted |

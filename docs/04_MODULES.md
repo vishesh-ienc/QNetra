@@ -19,7 +19,7 @@
 | **CBOM Generator** | `core.cbom_generator` | **Implemented** | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts from `CryptoAsset` list |
 | **Quantum Risk Engine** | `core.risk_engine` | **Implemented** | High (P0) | Computing deterministic quantum vulnerability risk scores (0–100) and severity ratings |
 | **Mosca Assessment Engine** | `core.mosca_engine` | **Implemented** | High (P0) | Evaluating $X+Y > Z$ Mosca inequality, HNDL exposure, migration urgency, and deadline calculation |
-| **PQC Recommendation Engine**| `core.recommendation_engine`| Planned | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements |
+| **PQC Recommendation Engine**| `core.recommendation_engine`| **Implemented** | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements (FIPS 203/204/205) |
 | **Backend API Gateway** | `backend.api` | Planned | High (P0) | REST API endpoints for scans, data retrieval, and export |
 | **Storage Manager** | `backend.storage` | Planned | Medium (P1) | Session cache & lightweight historical scan persistence |
 | **Web Dashboard UI** | `frontend` | Planned | High (P0) | Interactive visualization, charts, and report exploration |
@@ -220,18 +220,40 @@
 ### 10. PQC & Hybrid Recommendation Engine
 * **Module Identifier:** `MOD-010`
 * **Path:** `core/recommendation_engine`
-* **Purpose:** Provides tailored Post-Quantum Cryptography and Hybrid migration recommendations.
+* **Purpose:** Delivers deterministic, explainable NIST PQC and Hybrid migration recommendations for each classified CryptoAsset.
 * **Responsibility:**
-  * Map vulnerable classical algorithms to approved NIST standards (FIPS 203 ML-KEM, FIPS 204 ML-DSA, FIPS 205 SLH-DSA).
-  * Recommend hybrid classical-PQC schemes (e.g. X25519 + ML-KEM-768).
-  * Supply implementation guidance, code snippets, and migration complexity ratings.
-* **Inputs:** Vulnerable `CryptoAsset` list, `RiskAssessmentReport`.
-* **Outputs:** `PQCRecommendationReport`.
-* **Dependencies:** NIST PQC mapping rules.
-* **Related Data Contracts:** `PQCRecommendationReport`.
-* **Status:** Planned
+  * Map Shor-vulnerable public-key assets to standardized NIST PQC algorithms:
+    * Key exchange/KEM (ECDH, DH, RSA-KEM) → ML-KEM (NIST FIPS 203) via Hybrid X25519+ML-KEM-768.
+    * Digital signatures (ECDSA, DSA, Ed25519, RSA-sign) → ML-DSA (NIST FIPS 204); ECDSA/Ed25519 → Hybrid Ed25519+ML-DSA-65.
+    * Certificates → ML-DSA Hybrid with CA infrastructure guidance.
+  * Recommend hash family upgrades for Grover-impacted hash functions (SHA-256 → SHA-384; no KEM/DSA).
+  * Recommend symmetric key-length upgrades for Grover-impacted ciphers (AES-128 → AES-256; no algorithm change).
+  * Detect already-PQC assets (ML-KEM, ML-DSA, SLH-DSA) and return ALREADY_PQC (no unnecessary replacement).
+  * Return NO_MIGRATION_REQUIRED for non-applicable assets (Library, Random, Protocol).
+  * Return UNKNOWN for unrecognized algorithms without fabricating recommendations.
+  * Apply deterministic parameter selection policy (ML-KEM-768 default; ML-KEM-1024 for high-security RSA≥3072/ECC≥384).
+  * Maintain strict Risk Score and Mosca Urgency independence (recommendation routing never uses risk_score).
+  * Enforce no-fabrication: unknown algorithms receive UNKNOWN status, not fabricated recommendations.
+  * Batch results sorted deterministically by asset_id.
+* **Inputs:** Classified `CryptoAsset` list (with primitive_type, algorithm, key_length_bits, curve populated).
+* **Outputs:** `PQCRecommendation` (per-asset), `PQCRecommendationReport` (repository aggregate).
+* **Dependencies:** `core.models` (CryptoAsset, PrimitiveType).
+* **Related Data Contracts:** `PQCRecommendationReport` (docs/06 §2.5), `PQCRecommendation`.
+* **Key Files:**
+  * `core/recommendation_engine/models.py` — `PQCRecommendationType`, `MigrationComplexity`, `PQCRecommendation`, `AssetRecommendationDetail`, `PQCRecommendationReport` dataclasses.
+  * `core/recommendation_engine/knowledge.py` — PQC algorithm definitions, mapping tables, parameter selection policy, hybrid constructions, rationale templates.
+  * `core/recommendation_engine/mapper.py` — Pure stateless `map_asset_to_recommendation()` routing function.
+  * `core/recommendation_engine/engine.py` — `RecommendationEngine`: `recommend()`, `recommend_all()`, `generate_report()` (pure functional, no mutation).
+  * `core/recommendation_engine/__init__.py` — Public API exports.
+* **Architecture Invariants:**
+  * `recommend()` and `recommend_all()` are PURELY FUNCTIONAL — never mutate input CryptoAsset.
+  * Recommendation routing is independent of `risk_score` and Mosca urgency fields.
+  * Only finalized NIST PQC standards used as primary recommendations: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205).
+  * Hybrid constructions: only X25519+ML-KEM-768 and Ed25519+ML-DSA-65 explicitly supported.
+  * No datetime.now(), no non-deterministic logic.
+* **Status:** Implemented (`v1.0.0` — Milestone 3.3)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_recommendations.py`.
+* **Tests:** `tests/test_core/test_recommendation_engine.py` (104 tests: algorithm mapping, PQC detection, hybrid constructions, parameter selection, explainability, independence, determinism, no-mutation, serialization, batch, full pipeline 289→147→147→147→147→147).
 
 ---
 

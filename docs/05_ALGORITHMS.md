@@ -209,7 +209,7 @@ Score = Clamp(Sum(RiskFactor.score), 0, 100)
 * **Limitations:** Focuses on algorithmic, parameter, and protocol strength; does not model side-channel attacks or physical hardware vulnerabilities.
 * **Why Selected:** Fully deterministic, auditable, and transparent for compliance audits.
 
----
+
 
 ## 4. Mosca Migration Assessment Logic
 
@@ -292,27 +292,90 @@ $$\text{Exposure Gap} = \max(0, (X + Y) - Z)$$
 
 ---
 
-## 5. PQC & Hybrid Recommendation Logic
+### Alg-08: Deterministic PQC Recommendation Engine (Milestone 3.3)
+* **Name:** NIST PQC Recommendation Engine
+* **Module:** `core.recommendation_engine`
+* **Status:** Implemented (`v1.0.0` — Milestone 3.3)
+* **Purpose:** Produce per-asset, deterministic, explainable PQC migration recommendations by routing classified CryptoAssets through algorithm family and primitive type tables. The engine is independent of risk_score and Mosca urgency.
 
-### Alg-06: NIST PQC & Hybrid Migration Decision Engine
-* **Name:** Post-Quantum Replacement & Transition Recommender
-* **Purpose:** Maps vulnerable classical cryptographic primitives to approved NIST PQC replacements and transitional hybrid schemes.
-* **Mapping Matrix:**
+#### Routing Algorithm
 
-| Classical Primitive | Primary Function | Primary NIST PQC Replacement | Secondary / Alternative PQC | Recommended Hybrid Scheme |
-| :--- | :--- | :--- | :--- | :--- |
-| **RSA Key Exchange** | Key Encapsulation | **ML-KEM-768** (FIPS 203) | **ML-KEM-1024** (High Sec) | `X25519 + ML-KEM-768` |
-| **ECDH / X25519** | Key Agreement | **ML-KEM-768** (FIPS 203) | **ML-KEM-512** (Resource Constrained) | `ECDH (P-256) + ML-KEM-768` |
-| **RSA Digital Signature** | Auth / Signatures | **ML-DSA-65** (FIPS 204) | **SLH-DSA-SHA2-128s** (FIPS 205) | `RSA-2048 + ML-DSA-65` |
-| **ECDSA (secp256k1/r1)** | Signatures / Web3 | **ML-DSA-44 / 65** (FIPS 204) | **FN-DSA / Falcon** (FIPS 206) | `ECDSA + ML-DSA-65` |
-| **AES-128** | Symmetric Encryption| **AES-256-GCM** | **ChaCha20-Poly1305** (256-bit) | N/A (Increase Key Length to 256 bits) |
-| **SHA-1 / SHA-224** | Hashing / Digest | **SHA-384 / SHA-512 / SHA3-256** | **SHAKE256** | N/A (Migrate to SHA-2/3 $\ge 256$ bits) |
+```
+Input: CryptoAsset (algorithm, primitive_type, key_length_bits, curve, quantum_threat_type)
 
-* **Recommendation Generation Steps:**
-  1. Identify vulnerable primitive and operational usage context (e.g. Signature vs Key Exchange).
-  2. Select NIST PQC target standard.
-  3. Formulate Hybrid recommendation to allow dual verification during transition.
-  4. Estimate migration complexity (Low, Medium, High).
-  5. Provide code refactoring guidelines and reference imports.
-* **Outputs:** `List[PQCRecommendationItem]` with target algorithm, hybrid mode, complexity, and actionable steps.
-* **Why Selected:** Guarantees alignment with official US Federal Information Processing Standards (FIPS) finalized in August 2024.
+Step 1: Already PQC?
+    IF algorithm.upper().startswith({"ML-KEM", "ML-DSA", "SLH-DSA"}):
+        RETURN ALREADY_PQC (with FIPS 203/204/205 standard label)
+
+Step 2: Not Applicable?
+    IF primitive_type IN {LIBRARY, RANDOM}:
+        RETURN NO_MIGRATION_REQUIRED
+    IF primitive_type == PROTOCOL:
+        RETURN NO_MIGRATION_REQUIRED
+
+Step 3: Hash Functions
+    IF primitive_type == HASH_FUNCTION:
+        IF classically broken (MD5, SHA-1): RETURN DIRECT_PQC (-> SHA-256)
+        IF in HASH_UPGRADE_MAP: RETURN DIRECT_PQC (-> SHA-384 for SHA-256)
+        ELSE: RETURN NO_MIGRATION_REQUIRED (SHA-384, SHA-512 are adequate)
+
+Step 4: Symmetric Ciphers
+    IF primitive_type == SYMMETRIC_CIPHER:
+        IF classically broken (DES, 3DES, RC4): RETURN DIRECT_PQC (-> AES-256-GCM)
+        IF key_length_bits >= 256: RETURN NO_MIGRATION_REQUIRED
+        IF key_length_bits < 256 OR "128" in name: RETURN DIRECT_PQC (-> AES-256-GCM)
+
+Step 5: MAC / KDF
+    IF classically broken base (HMAC-MD5): RETURN DIRECT_PQC (-> HMAC-SHA-256)
+    ELSE: RETURN NO_MIGRATION_REQUIRED
+
+Step 6: Certificates
+    RETURN HYBRID (ML-DSA parameter, Ed25519+ML-DSA-65)
+
+Step 7: Digital Signatures
+    RSA-sign: DIRECT_PQC -> ML-DSA-65/87
+    ECDSA, Ed25519: HYBRID -> ML-DSA-65/87 + Ed25519+ML-DSA-65
+
+Step 8: Key Exchange / Asymmetric Encryption
+    RSA (key transport): HYBRID -> ML-KEM-768/1024 + X25519+ML-KEM-768
+    ECDH, DH, X25519: HYBRID -> ML-KEM-768/1024 + X25519+ML-KEM-768
+
+Step 9: Unknown primitive / algorithm
+    RETURN UNKNOWN (no fabrication)
+```
+
+#### Parameter Selection Policy (No Fabrication)
+
+| Trigger Condition | Selected Parameter Set |
+| :--- | :--- |
+| RSA key_length_bits >= 3072 | ML-KEM-1024 (NIST Cat. 5) or ML-DSA-87 (NIST Cat. 5) |
+| ECC curve contains "384", "521", or "448" | ML-KEM-1024 or ML-DSA-87 |
+| key_length_bits unknown or < 3072 | ML-KEM-768 (default) or ML-DSA-65 (default) |
+| Constrained environments | ML-KEM-512 — NEVER selected automatically; caller must explicitly specify |
+
+All parameter selections are logged in `PQCRecommendation.assumptions`.
+
+#### Supported Hybrid Constructions
+
+| Construction | Use Case | Notes |
+| :--- | :--- | :--- |
+| `X25519 + ML-KEM-768` | Key exchange / KEM migration | FIPS 203-compliant; key exchange hybrid |
+| `Ed25519 + ML-DSA-65` | Digital signature migration (ECDSA/Ed25519) | FIPS 204-compliant; dual-signature hybrid |
+
+No other hybrid constructions are invented or fabricated.
+
+#### Independence Invariants (RULE-002)
+
+```
+Risk Score    -> NEVER influences recommendation routing
+Mosca Urgency -> NEVER influences recommendation routing
+Recommendation = f(algorithm, primitive_type, key_length_bits, curve)
+```
+
+#### Output Contract
+
+`PQCRecommendation` dataclass fields: `asset_id`, `current_algorithm`, `current_primitive`, `recommendation_type` (DIRECT_PQC|HYBRID|ALREADY_PQC|NO_MIGRATION_REQUIRED|UNKNOWN), `recommended_algorithm`, `pqc_standard`, `hybrid_recommendation`, `rationale` (list), `assumptions` (list), `limitations` (list), `confidence` (HIGH|MEDIUM|LOW|INSUFFICIENT_DATA), `migration_complexity` (LOW|MEDIUM|HIGH), `guidance_steps` (list).
+
+* **Determinism Invariants:** `recommend()` is pure functional, `recommend_all()` sorts by `asset_id`, no datetime.now() or randomness.
+* **No-Fabrication Policy:** Unknown algorithms receive `UNKNOWN` with `recommended_algorithm = None`. Missing key sizes are logged as assumptions with default policy applied.
+* **Sources:** NIST FIPS 203/204/205 (2024), NIST SP 800-131A Rev 2, BSI/ENISA PQC guidance.
