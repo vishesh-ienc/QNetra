@@ -42,7 +42,7 @@ CBOM Generation (CycloneDX 1.6 JSON/XML)            [✓ IMPLEMENTED - Phase 2]
         ↓
 Quantum Risk Engine (Deterministic Scoring)         [✓ IMPLEMENTED - Phase 3]
         ↓
-Mosca Migration Urgency Engine (X + Y > Z)          [○ PLANNED - Phase 3]
+Mosca Migration Urgency Engine (X + Y > Z)          [✓ IMPLEMENTED - Phase 3]
         ↓
 PQC & Hybrid Recommendation Engine                  [○ PLANNED - Phase 3]
         ↓
@@ -108,22 +108,26 @@ CURRENT PHASE:
 Phase 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations) (IN PROGRESS)
 
 CURRENT SUB-PHASE:
-Milestones 2.1, 2.2, 2.3, & 3.1 Complete — Normalization, Classification, CBOM Generator, & Risk Engine
-Next: Milestone 3.2 — Michele Mosca Migration Engine (core.mosca_engine)
+Milestones 2.1, 2.2, 2.3, 3.1, & 3.2 Complete — Normalization, Classification, CBOM, Risk Engine, Mosca Engine
+Next: Milestone 3.3 — NIST PQC & Hybrid Recommendation Engine (core.recommendation_engine)
 
 LAST COMPLETED:
-Phase 3 Milestone 3.1 Risk Engine (2026-09-04):
-  - Implemented core/risk_engine/__init__.py (public API: RiskEngine, RiskAssessment, RiskAssessmentReport, RiskFactor, RiskSeverity, AssetRiskDetail)
-  - Implemented core/risk_engine/models.py (RiskSeverity, RiskFactor, RiskAssessment, AssetRiskDetail, RiskAssessmentReport)
-  - Implemented core/risk_engine/knowledge.py (base scores, parameter modifiers, severity thresholds, explainability templates)
-  - Implemented core/risk_engine/scorer.py (RiskScorer: 0-100 bounded, pure, double-count prevention, no fabrication)
-  - Implemented core/risk_engine/engine.py (RiskEngine: assess, assess_all, assess_and_enrich, generate_report)
-  - Created tests/test_core/test_risk_engine.py (41 tests, 98% risk engine coverage)
-  - Full test suite: 313 passed, 0 failed
-  - Full pipeline verification: 289 RawFindings -> 147 Assets -> 147 Classified -> 147 Risk Assessments (overall 83.8 CRITICAL)
-  - Updated docs/04_MODULES.md, docs/05_ALGORITHMS.md, docs/06_API_AND_DATA_CONTRACTS.md, docs/07_PROGRESS.md, docs/08_DECISIONS_AND_LOG.md (DEC-014), docs/09, docs/10, PROJECT_CONTEXT.md, current_status.md, current_prompt_update.md
+Phase 3 Milestone 3.2 Mosca Engine (2026-09-04):
+  - Implemented core/mosca_engine/__init__.py (public API: MoscaEngine, MoscaInput, MoscaConfig, MoscaAssessment, MoscaAssessmentReport, MoscaUrgency, HNDLExposure)
+  - Implemented core/mosca_engine/models.py (MoscaUrgency, HNDLExposure, MoscaInput, MoscaAssessment, AssetMoscaDetail, MoscaAssessmentReport)
+  - Implemented core/mosca_engine/knowledge.py (quantum scenarios, migration baselines, HNDL thresholds, urgency constants, assumption templates, MoscaConfig)
+  - Implemented core/mosca_engine/calculator.py (validate_duration, evaluate_inequality, calculate_exposure_gap, calculate_deadline, classify_hndl_exposure, classify_urgency)
+  - Implemented core/mosca_engine/engine.py (MoscaEngine: assess, assess_all, generate_report — all pure functional, no mutation, no datetime.now())
+  - Created tests/test_core/test_mosca_engine.py (95 tests, 97% Mosca engine coverage)
+  - Full test suite: 408 passed, 1 skipped, 0 failed
+  - ADR DEC-015: No-fabrication X, explicit date, Risk/Mosca independence
+  - Updated docs/04, docs/05 (Alg-07), docs/07, docs/08 (DEC-015), PROJECT_CONTEXT.md, current_status.md, current_prompt_update.md
 
 PREVIOUSLY COMPLETED:
+Phase 3 Milestone 3.1 Risk Engine (2026-09-04):
+  - Implemented core/risk_engine/__init__.py, models.py, knowledge.py, scorer.py, engine.py
+  - Created tests/test_core/test_risk_engine.py (41 tests, 98% risk engine coverage)
+  - Full pipeline verification: 289 RawFindings -> 147 Assets -> 147 Classified -> 147 Risk Assessments (overall 83.8 CRITICAL)
 Phase 2 Milestone 2.3 CBOM Generator (2026-09-04):
   - CycloneDX 1.6 JSON/XML serialization, validator, mapper, models (116 tests, 92% coverage)
 Phase 2 Classification Subsystem & Normalization Hardening (2026-09-03):
@@ -134,10 +138,14 @@ Phase 1 Discovery Layer Implementation & Validation:
   - BaseScanner, ScannerRouter, registries, Repository/Container/Binary scanners, 77 tests (289 real findings)
 
 CURRENTLY IMPLEMENTING:
-Phase 3 Milestone 3.2: Mosca Migration Assessment Engine (core.mosca_engine).
+Phase 3 Milestone 3.3: NIST PQC & Hybrid Recommendation Engine (core.recommendation_engine).
 
 NEXT LOGICAL STEP:
-Phase 3 Milestone 3.2: Michele Mosca Migration Timeline Engine (core.mosca_engine).
+Phase 3 Milestone 3.3: NIST FIPS 203/204/205 PQC Recommendation Engine.
+  - Algorithmic replacement mapping (RSA → ML-KEM, ECDSA → ML-DSA, etc.)
+  - Hybrid transition scheme recommendations.
+  - Per-asset PQCRecommendation dataclass.
+  - Repository-level PQCRecommendationReport.
 ```
 
 ---
@@ -179,10 +187,18 @@ Phase 3 Milestone 3.2: Michele Mosca Migration Timeline Engine (core.mosca_engin
   * `RiskScorer`: Deterministic Alg-06 calculator with strict 0–100 bounds, double-counting prevention, and no-fabrication parameter handling.
   * `models.py`: `RiskSeverity`, `RiskFactor`, `RiskAssessment`, `AssetRiskDetail`, `RiskAssessmentReport`.
   * `knowledge.py`: Algorithmic base scores, parameter modifiers, severity thresholds, explainability templates.
-* **Test Suite (`tests/`):** 313 passed tests, 98% risk engine coverage, 92% CBOM coverage, 85%+ core coverage overall.
+* **Mosca Migration Engine (`core/mosca_engine/`):**
+  * `MoscaEngine`: Pure single/batch assessment (`assess`, `assess_all`), aggregate `MoscaAssessmentReport` generation (no asset mutation).
+  * `calculator.py`: `validate_duration`, `evaluate_inequality` (equality = False boundary), `calculate_exposure_gap`, `calculate_deadline_years_from_now`, `classify_hndl_exposure`, `classify_urgency`.
+  * `models.py`: `MoscaUrgency` (6 tiers), `HNDLExposure` (6 tiers), `MoscaInput`, `MoscaAssessment`, `AssetMoscaDetail`, `MoscaAssessmentReport`.
+  * `knowledge.py`: Quantum-arrival scenarios, migration baselines, HNDL thresholds, urgency constants, assumption templates, `MoscaConfig`.
+  * No-fabrication: protected lifetime (X) has no silent default; urgency is UNKNOWN without it.
+  * No `datetime.now()`: all deadlines use explicit `assessment_date` from `MoscaInput`.
+  * Risk independence: Mosca urgency is orthogonal to Risk Score (DEC-015).
+* **Test Suite (`tests/`):** 408 passed tests, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
 
 ### ○ PLANNED (Upcoming Phases)
-* **Phase 3:** `core.risk_engine` (Deterministic risk scoring), `core.mosca_engine` ($X+Y > Z$ simulation), `core.recommendation_engine` (NIST FIPS 203/204/205 mapping).
+* **Phase 3.3:** `core.recommendation_engine` (NIST FIPS 203/204/205 algorithmic replacement mapping, hybrid scheme recommendations).
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).
 
 ---

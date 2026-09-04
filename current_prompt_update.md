@@ -5,135 +5,117 @@
 
 ---
 
-## Prompt Session: Phase 3 Milestone 3.1 — Deterministic Cryptographic Risk Engine
+## Prompt Session: Phase 3 Milestone 3.2 — Michele Mosca Migration & HNDL Engine
 
-**Timestamp:** 2026-09-04T01:15:00+05:30  
+**Timestamp:** 2026-09-04T09:30:00+05:30  
 **Phase:** 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations)  
-**Milestone:** 3.1 (Deterministic Cryptographic Risk Engine) — **COMPLETE**
+**Milestone:** 3.2 (Michele Mosca Migration & HNDL Engine) — **COMPLETE**
 
 ---
 
 ## 1. Objective & Scope
 
-Implemented **Milestone 3.1: Deterministic Cryptographic Risk Engine** (`core.risk_engine`):
-- Consumes canonical, classified `CryptoAsset` instances.
-- Computes a deterministic, explainable **0–100 risk score** and 4-tier severity rating (`CRITICAL`, `HIGH`, `MEDIUM`, `LOW`) per Alg-06.
-- Prevents double-counting between classical vulnerabilities and quantum threats.
-- Enforces strict no-fabrication policy for unverified parameters.
-- Provides purely functional single/batch assessments (`assess`, `assess_all`) and explicit in-place asset enrichment (`assess_and_enrich`, `assess_and_enrich_all`).
-- Generates repository-level aggregate `RiskAssessmentReport` conforming to `docs/06_API_AND_DATA_CONTRACTS.md` Section 2.3 and `docs/10_API_CONTRACT.md` Section 9.
-- Strictly honors architecture boundaries: NO scanner logic, NO Mosca $X+Y>Z$ logic, NO PQC recommendations, NO FastAPI/UI scope creep.
+Implemented **Milestone 3.2: Michele Mosca Migration Engine** (`core.mosca_engine`):
+- Consumes canonical, classified `CryptoAsset` instances plus optional per-asset `MoscaInput` context.
+- Evaluates the Mosca inequality ($X + Y > Z$) where X = data shelf life, Y = migration time, Z = quantum horizon.
+- Classifies HNDL (Harvest Now, Decrypt Later) exposure (CRITICAL/HIGH/MEDIUM/LOW/NONE/UNKNOWN).
+- Derives migration urgency (IMMEDIATE/URGENT/PLANNED/MONITOR/NOT_REQUIRED/UNKNOWN).
+- Calculates migration deadline ($Z - Y$ years from explicit `assessment_date`).
+- Handles NOT_APPLICABLE (Library, Random) and quantum-resistant (ML-KEM, ML-DSA, SLH-DSA) assets.
+- Enforces strict no-fabrication for protected lifetime (X) — returns UNKNOWN without it.
+- Enforces no `datetime.now()` inside engine — all dates are explicit (deterministic testing).
+- Keeps Risk and Mosca strictly orthogonal (DEC-015): risk_score does NOT determine urgency.
+- Strictly honors architecture boundaries: NO scanner logic, NO risk scoring, NO PQC recommendations, NO FastAPI scope.
 
 ---
 
 ## 2. Work Completed This Session
 
-### A. `core/risk_engine/models.py` — Domain Models
-- `RiskSeverity(str, Enum)`: `CRITICAL` (80–100), `HIGH` (60–79), `MEDIUM` (30–59), `LOW` (0–29).
-  - Helper `from_score(score: float | int) -> RiskSeverity` with strict clamping.
-- `RiskFactor`: Explainable factor dataclass (`name`, `score`, `maximum`, `reason`, `source_field`, `to_dict()`).
-- `RiskAssessment`: Single-asset risk result (`asset_id`, `risk_score` [0–100 validated], `severity`, `factors`, `rationale`, `confidence` metadata, `to_dict()`).
-- `AssetRiskDetail`: Lightweight summary matching `docs/06_API_AND_DATA_CONTRACTS.md` Section 2.3 contract.
-- `RiskAssessmentReport`: Aggregate repository report (`overall_risk_score`, `overall_severity`, counts, distributions, `to_dict()`).
+### A. `core/mosca_engine/models.py` — Domain Models
+- `MoscaUrgency(str, Enum)`: IMMEDIATE, URGENT, PLANNED, MONITOR, NOT_REQUIRED, UNKNOWN.
+- `HNDLExposure(str, Enum)`: CRITICAL, HIGH, MEDIUM, LOW, NONE, UNKNOWN.
+- `MoscaInput`: Per-asset context dataclass (`asset_id`, `migration_time_years` Y, `quantum_arrival_years` Z, `protected_lifetime_years` X, `hndl_sensitive`, `assessment_date`).
+- `MoscaAssessment`: Full result dataclass with all X/Y/Z components, gap, triggered, urgency, HNDL, deadline, date, assumptions list, rationale list, `to_dict()`.
+- `AssetMoscaDetail`: Lightweight summary for report lists (`to_dict()`).
+- `MoscaAssessmentReport`: Aggregate repository report with counts, distributions, highest-urgency list, `to_dict()`.
 
-### B. `core/risk_engine/knowledge.py` — Knowledge & Constants
-- Centralized baseline scores per Alg-06:
-  - `BASE_CLASSICALLY_BROKEN = 100.0` (MD5, SHA-1, DES, RC4)
-  - `BASE_SHOR_VULNERABLE = 90.0` (RSA, ECC, DH, ECDSA)
-  - `BASE_GROVER_DEGRADED_SYMMETRIC = 60.0` (AES-128, 3DES)
-  - `BASE_GROVER_DEGRADED_HASH = 40.0` (SHA-256)
-  - `BASE_QUANTUM_RESISTANT_CLASSICAL = 20.0` (AES-256, SHA-384, SHA-512)
-  - `BASE_NIST_APPROVED_PQC = 0.0` (ML-KEM, ML-DSA, SLH-DSA)
-  - `BASE_UNKNOWN_ALGORITHM = 50.0`
-  - `BASE_NOT_APPLICABLE = 0.0` (Library, Random)
-- Parameter modifiers:
-  - `MOD_RSA_BELOW_2048 = +10.0`
-  - `MOD_RSA_GE_4096 = -5.0`
-  - `MOD_AES_128 = +10.0`
-  - `MOD_AES_256 = -10.0`
-  - `MOD_AES_192 = -5.0`
-  - `MOD_ECB_MODE = +15.0`
-  - `MOD_WEAK_PADDING = +5.0`
-  - `MOD_CLASSICAL_WEAK = +10.0`
-  - `MOD_PARAM_UNKNOWN = 0.0` (no fabrication)
-- Repository aggregation weights: `REPO_MAX_WEIGHT = 0.7`, `REPO_MEAN_WEIGHT = 0.3`.
-- Reusable explainability string templates.
+### B. `core/mosca_engine/knowledge.py` — Knowledge & Constants
+- Quantum-arrival scenarios: `QUANTUM_ARRIVAL_OPTIMISTIC = 7.0`, `BASELINE = 10.0`, `CONSERVATIVE = 15.0`.
+- Migration time baselines by primitive class: Asymmetric (4.0 yrs), Symmetric (1.5 yrs), Hash (1.0 yr), Protocol (3.0 yrs), Library (2.0 yrs), Unknown (3.0 yrs).
+- HNDL thresholds: `HNDL_CRITICAL_BUFFER_YEARS = 5.0`, `HNDL_HIGH_MARGIN_YEARS = 0.0`, `HNDL_MEDIUM_THRESHOLD_YEARS = -3.0`.
+- Urgency constants: `URGENCY_URGENT_GAP_THRESHOLD = 2.0`, `URGENCY_PLANNED_BUFFER_THRESHOLD = 3.0`.
+- NOT_APPLICABLE primitive types (Library, Random), PQC prefixes, Shor/Grover threat value sets.
+- `MoscaConfig` dataclass: `default_quantum_arrival_years = 10.0`, `default_protected_lifetime_years = None` (no fabrication), `use_primitive_migration_defaults = True`.
+- Assumption string templates for explainability.
 
-### C. `core/risk_engine/scorer.py` — Pure Scoring Engine
-- `RiskScorer.calculate_risk(asset: CryptoAsset) -> RiskAssessment`:
-  - Operational artifacts (Library, Random) -> Score 0 (LOW).
-  - Classically broken primitives (MD5, SHA-1, DES) -> Score 100 (CRITICAL). Quantum threat analysis marked superseded to prevent double counting.
-  - NIST-approved PQC -> Score 0 (LOW).
-  - Shor-vulnerable asymmetric (RSA, ECC, DH) -> Base 90 + key length modifiers (RSA-1024 = 100, RSA-2048 = 90, RSA-4096 = 85).
-  - Grover-impacted symmetric -> AES-128 = 70 (HIGH), AES-256 = 10 (LOW), AES-192 = 55 (MEDIUM), AES unknown key = 50 (MEDIUM), 3DES = 75 (HIGH).
-  - Hash functions -> SHA-384/512 = 15 (LOW), SHA-256 = 40 (MEDIUM), SHA-224 = 65 (HIGH).
-  - KDF / MAC -> HMAC-SHA256 = 30 (MEDIUM), HMAC-SHA1 = 100 (CRITICAL), PBKDF2 = 30 (MEDIUM).
-  - Protocols -> SSLv3 = 100 (CRITICAL), TLS 1.0 = 70 (HIGH), TLS 1.3 = 25 (LOW).
-  - Unrecognized primitive -> 50 (MEDIUM).
-  - Strict bounding: `max(0, min(100, score))`.
-  - Severity derivation via `RiskSeverity.from_score()`.
+### C. `core/mosca_engine/calculator.py` — Pure Calculation Functions
+- `validate_duration(name, value)`: Rejects negative, NaN, infinity, non-numeric.
+- `evaluate_inequality(x, y, z)`: $X + Y > Z$ — equality returns False (documented boundary).
+- `calculate_x_plus_y(x, y)`: Simple sum.
+- `calculate_exposure_gap(x, y, z)`: $\max(0, (X+Y)-Z)$.
+- `calculate_deadline_years_from_now(z, y)`: $Z - Y$.
+- `classify_hndl_exposure(...)`: 6-tier HNDL classification for Shor/Grover/PQC/Unknown.
+- `classify_urgency(...)`: 6-tier urgency derived from inequality, HNDL, buffer analysis.
 
-### D. `core/risk_engine/engine.py` — Engine Orchestrator
-- `RiskEngine`:
-  - `assess(asset)`: pure evaluation, zero asset mutation.
-  - `assess_all(assets)`: pure batch evaluation, deterministically sorted by `asset_id`.
-  - `assess_and_enrich(asset)`: updates `asset.risk_score` and `asset.risk_severity` in place.
-  - `assess_and_enrich_all(assets)`: bulk in-place enrichment, sorted by `asset_id`.
-  - `generate_report(assets, assessments)`: calculates overall score, severity, distributions, and returns `RiskAssessmentReport`.
+### D. `core/mosca_engine/engine.py` — Engine Orchestrator
+- `MoscaEngine`:
+  - `assess(asset, context)`: Pure evaluation, zero asset mutation. Resolves Z → Y → X in order. Documents all assumptions. Evaluates inequality, HNDL, urgency in sequence. Returns fully populated `MoscaAssessment`.
+  - `assess_all(assets, contexts)`: Pure batch, sorted deterministically by `asset_id`.
+  - `generate_report(assets, assessments, contexts)`: Aggregate report with all distribution counts and top-urgency asset list.
+- `_hndl_rationale()`: Human-readable HNDL explanation builder.
 
-### E. `core/risk_engine/__init__.py` — Package Interface
-- Exports: `RiskEngine`, `RiskAssessment`, `RiskAssessmentReport`, `RiskFactor`, `RiskSeverity`, `AssetRiskDetail`, `RiskScorer`.
+### E. `core/mosca_engine/__init__.py` — Package Interface
+- Exports: `MoscaEngine`, `MoscaInput`, `MoscaConfig`, `MoscaAssessment`, `MoscaAssessmentReport`, `AssetMoscaDetail`, `MoscaUrgency`, `HNDLExposure`.
 
 ---
 
 ## 3. Test Suite & Coverage
 
-Created `tests/test_core/test_risk_engine.py` with 41 comprehensive tests:
-- `TestPackageStructure` (3 tests): imports, severity mapping, post-init validation.
-- `TestRepresentativeAlgorithms` (14 tests): RSA-2048, RSA-1024, RSA-4096, ECDSA P-256, AES-128, AES-256, SHA-256, SHA-384, SHA-512, MD5, SHA-1, DES, ML-KEM, 3DES.
-- `TestParametersAndNoFabrication` (4 tests): unknown RSA key, unknown AES key, ECB mode, PKCS1 padding.
-- `TestDoubleCountPrevention` (2 tests): classically broken zeros quantum penalty, Shor avoids classical duplication.
-- `TestOperationalArtifacts` (7 tests): library, random, unknown, SHA-224, HMAC-SHA1, PBKDF2, Protocols (SSLv3, TLS 1.0, TLS 1.3), AES-192, unknown AES + ECB.
-- `TestPurityAndDeterminism` (4 tests): purity of assess(), in-place enrichment, identical runs, deterministic ordering.
-- `TestAggregateReport` (2 tests): empty report, 3-asset report calculation and schema.
-- `TestFullPipelineIntegration` (1 test): End-to-end 289 RawFindings → 147 CryptoAssets → 147 Classified → 147 Risk Assessments.
+Created `tests/test_core/test_mosca_engine.py` with **95 comprehensive tests** across 16 test classes:
+
+- `TestInequalityEvaluation` (13 tests): X+Y>Z triggered, X+Y==Z boundary (False), X+Y<Z, zeros, gap, deadline.
+- `TestDurationValidation` (11 tests): negative, NaN, +inf, -inf, non-numeric, None, zero valid, large valid, int valid.
+- `TestEngineInputValidation` (5 tests): Engine rejects negative/NaN/inf in context fields.
+- `TestShorVulnerableAssets` (5 tests): RSA triggered, RSA not-triggered, ECDSA, ECDH, DH.
+- `TestQuantumResistantAssets` (5 tests): ML-KEM, ML-DSA, SLH-DSA, PQC+long-lifetime, PQC assumptions.
+- `TestNotApplicableAssets` (4 tests): Library, Random, HNDL=NONE, no XYZ values.
+- `TestMissingInputs` (5 tests): Missing X → UNKNOWN, assumption recorded, explicit None, derived Y, no-defaults config.
+- `TestHNDLExposure` (11 tests): CRITICAL, HIGH, LOW, PQC NONE, unknown vulnerability, Grover LOW/MEDIUM, no lifetime UNKNOWN, short lifetime, explicit flag, quantum-safe NONE.
+- `TestUrgencyClassification` (7 tests): NOT_REQUIRED, IMMEDIATE, URGENT, MONITOR, PLANNED, UNKNOWN.
+- `TestMigrationDeadline` (4 tests): Deadline present, None without X, assessment_date passthrough, None when not provided.
+- `TestDeterminism` (3 tests): Same inputs same result, deterministic batch ordering, date determinism.
+- `TestNoMutation` (2 tests): assess() and assess_all() never modify CryptoAsset.
+- `TestExplainability` (5 tests): All required fields, inequality in rationale, to_dict JSON-serializable, assumption templates.
+- `TestRiskVsMoscaIndependence` (2 tests): Same risk_score → different urgency; low-risk can be URGENT.
+- `TestMoscaReport` (5 tests): Counts correct, distributions complete, empty case, serialization.
+- `TestGroverAssets` (4 tests): Applicable, SHA-256, triggered inequality, assumption logged.
+- `TestMoscaConfig` (3 tests): Optimistic scenario, custom horizon, global X default.
+- `TestFullPipeline` (2 tests): Full pipeline integration (skipped if fixtures absent), synthetic batch with provided lifetime.
 
 ### Test Results:
 ```
 ============================= test session starts =============================
 platform win32 -- Python 3.13.1, pytest-9.1.1, pluggy-1.6.0
-collected 313 items (0 failures, 100% pass rate)
+collected 409 items
 
-Coverage (core/risk_engine):
+Coverage (core/mosca_engine):
   __init__.py       100%
-  engine.py         100%
+  calculator.py      90%
+  engine.py          99%
   knowledge.py      100%
   models.py         100%
-  scorer.py          95%
-  TOTAL (Risk)       98%
-============================= 313 passed in 1.37s =============================
+  TOTAL (Mosca)      97%
+============================= 408 passed, 1 skipped in 2.64s ==================
 ```
 
 ---
 
-## 4. Full Pipeline Verification Results (289 -> 147 -> 147 -> 147)
+## 4. Architecture Decision Record (DEC-015)
 
-Executed live verification script running all Phase 1 discovery fixtures through normalization, classification, and risk scoring:
-- **RawFindings Discovered:** 289
-- **Canonical CryptoAssets Normalized:** 147 (142 duplicate finding merges)
-- **CryptoAssets Classified:** 147
-- **Risk Assessments Generated:** 147
-- **Overall Repository Risk Score:** 83.8 / 100.0 (`CRITICAL`)
-- **Vulnerable Assets Count:** 65
-- **Shor Vulnerable Count:** 29
-- **Grover Impacted Count:** 22
-- **Classically Broken Count:** 14
-- **Quantum Resistant Count:** 3
-- **Severity Distribution:**
-  - `CRITICAL`: 43
-  - `HIGH`: 1
-  - `MEDIUM`: 64
-  - `LOW`: 39
+**DEC-015: Mosca Engine Architecture: No-Fabrication X, Explicit Date, Risk Independence**
+1. **No-fabrication for X:** Protected lifetime has no silent default — UNKNOWN when missing.
+2. **Explicit assessment_date:** No `datetime.now()` ever — deterministic for testing and audits.
+3. **Risk/Mosca independence:** Risk Score and Mosca Urgency are orthogonal dimensions; neither determines the other.
 
 ---
 
@@ -141,42 +123,26 @@ Executed live verification script running all Phase 1 discovery fixtures through
 
 | File | Action | Purpose |
 | :--- | :--- | :--- |
-| `core/risk_engine/__init__.py` | Created | Public package interface |
-| `core/risk_engine/models.py` | Created | Domain models: `RiskSeverity`, `RiskFactor`, `RiskAssessment`, `RiskAssessmentReport` |
-| `core/risk_engine/knowledge.py` | Created | Base scores, parameter modifiers, severity thresholds, explainability templates |
-| `core/risk_engine/scorer.py` | Created | Pure deterministic risk scoring logic (Alg-06) |
-| `core/risk_engine/engine.py` | Created | RiskEngine orchestrator (assess, assess_all, assess_and_enrich, generate_report) |
-| `tests/test_core/test_risk_engine.py` | Created | 41-test comprehensive test suite (98% coverage) |
-| `docs/04_MODULES.md` | Modified | Updated Risk Engine status: Planned → Implemented; updated CBOM & Classification body statuses |
-| `docs/05_ALGORITHMS.md` | Modified | Updated Alg-06 specification to Implemented with full factor breakdown & formulas |
-| `docs/06_API_AND_DATA_CONTRACTS.md` | Modified | Updated Section 2.3 `RiskAssessmentReport` to Implemented |
-| `docs/07_PROGRESS.md` | Modified | Recorded Milestone 3.1 completion, 313 tests, updated Phase 3 roadmap |
-| `docs/08_DECISIONS_AND_LOG.md` | Modified | Added DEC-014 (Risk Engine Architecture & Factor Model), updated index |
-| `docs/09_KNOWLEDGE_BASE.md` | Modified | Added references to Alg-06 Risk Model and NIST SP 800-57 |
-| `docs/10_API_CONTRACT.md` | Modified | Updated Section 9 to note core engine implemented (Milestone 3.1) |
-| `PROJECT_CONTEXT.md` | Modified | Updated pipeline diagram, status snapshot, implemented list, test counts |
-| `current_status.md` | Modified | Updated executive snapshot, test suite health (313/313), pipeline diagram |
+| `core/mosca_engine/__init__.py` | Created | Public package interface |
+| `core/mosca_engine/models.py` | Created | Domain models: `MoscaUrgency`, `HNDLExposure`, `MoscaInput`, `MoscaAssessment`, `MoscaAssessmentReport` |
+| `core/mosca_engine/knowledge.py` | Created | Quantum scenarios, migration baselines, HNDL thresholds, urgency constants, `MoscaConfig` |
+| `core/mosca_engine/calculator.py` | Created | Pure deterministic Mosca calculation functions (Alg-07) |
+| `core/mosca_engine/engine.py` | Created | MoscaEngine orchestrator (assess, assess_all, generate_report) |
+| `tests/test_core/test_mosca_engine.py` | Created | 95-test comprehensive test suite (97% coverage) |
+| `docs/04_MODULES.md` | Modified | MOD-009 Mosca Engine: Planned → Implemented; updated spec |
+| `docs/05_ALGORITHMS.md` | Modified | Alg-07: Expanded with full implementation spec, tiers, formulas, boundary conditions |
+| `docs/07_PROGRESS.md` | Modified | Milestone 3.2 complete; updated tasks, milestones, changelog |
+| `docs/08_DECISIONS_AND_LOG.md` | Modified | Added DEC-015 (Mosca Engine Architecture), updated index |
+| `PROJECT_CONTEXT.md` | Modified | Pipeline diagram, status, implemented list, next steps |
 | `current_prompt_update.md` | Modified | Overwritten with this mandatory prompt summary (RULE-012) |
 
 ---
 
-## 6. Architecture Decision Record (DEC-014)
+## 6. Next Recommended Steps (Phase 3 Roadmap)
 
-- **DEC-014: Deterministic Cryptographic Risk Engine Architecture & Factor Model**
-  - Factor ownership prevents double-counting between classical and quantum vulnerabilities.
-  - Strict no-fabrication policy preserves unknown parameters without guesses.
-  - Discovery confidence is preserved as descriptive metadata without diluting mathematical risk.
-  - Purity is preserved: `assess()` does not mutate assets; enrichment is explicit.
-  - Repository overall score weights worst-case asset ($0.7 \times \max + 0.3 \times \text{mean}$) to avoid dilution.
-
----
-
-## 7. Next Recommended Steps (Phase 3 Roadmap)
-
-1. **Phase 3 Milestone 3.2: Michele Mosca Migration Engine (`core.mosca_engine`)**
-   - $X + Y > Z$ inequality simulation.
-   - Harvest Now, Decrypt Later (HNDL) exposure window calculation.
-   - Urgency rating and migration deadline calculation.
-2. **Phase 3 Milestone 3.3: NIST PQC Recommendation Engine (`core.recommendation_engine`)**
-   - Algorithmic replacement mapping to NIST FIPS 203 (ML-KEM), FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA).
-   - Transitional hybrid scheme recommendations (e.g. X25519 + ML-KEM-768).
+1. **Phase 3 Milestone 3.3: NIST PQC Recommendation Engine (`core.recommendation_engine`)**
+   - Algorithmic replacement mapping: RSA → ML-KEM, ECDSA → ML-DSA, DH → ML-KEM, SHA-256 → SHA-384/SHA-512.
+   - Hybrid transition scheme recommendations (e.g. X25519 + ML-KEM-768).
+   - Per-asset `PQCRecommendation` dataclass with explainability.
+   - Repository-level `PQCRecommendationReport` aggregate.
+   - Must NOT put Mosca urgency logic or Risk scoring inside this engine.

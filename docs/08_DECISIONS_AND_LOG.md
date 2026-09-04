@@ -489,6 +489,45 @@ Strict explainability and determinism are non-negotiable for enterprise cybersec
 
 ---
 
+### DEC-015 — Mosca Engine Architecture: No-Fabrication, Explicit Date, Risk Independence
+
+* **Date:** 2026-09-04
+* **Status:** Accepted
+* **Deciders:** Core Engineering Team
+
+#### Context
+Milestone 3.2 required implementing the Mosca inequality ($X + Y > Z$) for per-asset migration urgency.
+Three critical design tensions had to be resolved:
+1. Should the engine assume a default protected lifetime (X) when none is provided?
+2. Should assessment rely on `datetime.now()` for deadline calculations?
+3. Should the Mosca urgency tier be derived from, or correlated with, the Risk Score?
+
+#### Decision
+1. **No-fabrication for protected lifetime (X):** The engine NEVER invents a default X. If the caller does not supply `protected_lifetime_years`, urgency is returned as `UNKNOWN`. Only migration time (Y) has documented primitive-class baselines because it is a structural property of system architecture (not data context).
+2. **Explicit assessment date:** The engine never reads `datetime.now()` internally. All deadline calculations use the explicit `assessment_date` field from `MoscaInput`. This preserves strict test determinism and avoids date-dependent divergence in production.
+3. **Risk and Mosca are orthogonal dimensions:** Risk score measures cryptographic vulnerability severity. Mosca urgency measures whether the timeline demands immediate action. A low-risk asset can be Mosca-URGENT (long-lived data), and a high-risk asset can be Mosca-MONITOR (short-lived data). These are intentionally independent.
+
+#### Reasoning
+- Fabricating X would produce silently incorrect urgency assessments — the system would claim 'NOT_URGENT' for a national-security-sensitive asset if it assumed short data lifetime.
+- Using `datetime.now()` makes tests non-deterministic and prevents reproducible audit trail generation.
+- Decoupling Risk and Mosca enables more nuanced security posture analysis, which is the purpose of the Mosca theorem.
+
+#### Alternatives Considered
+* **Default X = 10 years (global median):** Rejected. Would silently misclassify session tokens as CRITICAL and short-lived assets as triggered. The user should always supply context about what data the cryptographic asset is protecting.
+* **Single unified score combining Risk + Mosca:** Rejected. Conflates two distinct security dimensions. The Mosca theorem specifically exists to provide a timeline perspective that raw vulnerability scoring cannot.
+* **Use system clock for deadline:** Rejected. Creates non-deterministic test failures and makes audit reports date-sensitive in ways that are hard to control.
+
+#### Consequences
+* Positive: Deterministic, testable, auditable Mosca assessments with zero hidden assumptions.
+* Positive: No regression in Risk Engine or Classification engines.
+* Positive: Risk vs. Mosca independence preserved, enabling Milestone 3.3 recommendations to synthesize both dimensions.
+* Trade-off: Callers must supply `protected_lifetime_years` per asset context to obtain full assessments; without it, urgency is UNKNOWN (appropriate, not a bug).
+
+#### Related Modules / Data Contracts
+* `core/mosca_engine/` (`engine.py`, `calculator.py`, `models.py`, `knowledge.py`), `docs/05_ALGORITHMS.md` (Alg-07), `docs/06_API_AND_DATA_CONTRACTS.md` (Section 2.4), `docs/10_API_CONTRACT.md` (Section 12).
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
@@ -507,4 +546,5 @@ Strict explainability and determinism are non-negotiable for enterprise cybersec
 | **DEC-012** | Classification Engine Architecture: Independent Dimensions & No-Fabrication Policy | 2026-09-03 | Accepted |
 | **DEC-013** | CycloneDX 1.6 CBOM Generation Architecture | 2026-09-04 | Accepted |
 | **DEC-014** | Deterministic Cryptographic Risk Engine Architecture & Factor Model | 2026-09-04 | Accepted |
+| **DEC-015** | Mosca Engine Architecture: No-Fabrication X, Explicit Date, Risk Independence | 2026-09-04 | Accepted |
 

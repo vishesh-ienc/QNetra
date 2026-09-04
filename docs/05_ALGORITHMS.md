@@ -215,15 +215,21 @@ Score = Clamp(Sum(RiskFactor.score), 0, 100)
 
 ### Alg-07: Michele Mosca Migration Inequality & Urgency Evaluation
 * **Name:** Mosca Theorem Quantum Urgency Calculator
-* **Purpose:** Evaluates whether an organization is already in a state of quantum vulnerability due to the Harvest Now, Decrypt Later (HNDL) threat model.
+* **Module:** `core.mosca_engine` (`MoscaEngine`, `MoscaCalculator`, `knowledge`)
+* **Status:** Implemented (`v1.0.0` — Milestone 3.2)
+* **Purpose:** Evaluates per-asset migration urgency and HNDL exposure using the Mosca inequality.
+  Answers: Is migration overdue? Is there HNDL risk? How urgent is action?
 * **Mathematical Model:**
 
 $$\text{Mosca's Inequality:} \quad X + Y > Z$$
 
 Where:
-* **$X$ (Shelf Life / Security Lifetime):** The number of years the encrypted data must remain confidential (e.g., healthcare records: 20–30 years, financial records: 10 years, session tokens: 0.1 years).
-* **$Y$ (Migration Time):** The number of years required to re-architect systems, update protocols, deploy PQC, and certify infrastructure (typically 3–7 years for enterprise systems).
-* **$Z$ (Collapse Time / Quantum Horizon):** The estimated number of years until a Cryptographically Relevant Quantum Computer (CRQC) exists (industry consensus: 2030–2035, i.e., 5–10 years).
+* **$X$ (Data Shelf Life):** Years the data/system must remain confidential.
+* **$Y$ (Migration Time):** Years required to re-architect, deploy PQC, and certify infrastructure.
+* **$Z$ (Quantum Horizon):** Estimated years until a Cryptographically Relevant Quantum Computer (CRQC) exists.
+
+**Naming Convention:** Follows `docs/09_KNOWLEDGE_BASE.md §2.1` and `docs/06 §2.4` field naming.
+  `data_shelf_life_years_x`, `migration_time_years_y`, `quantum_threat_horizon_z`.
 
 ```mermaid
 gantt
@@ -238,21 +244,50 @@ gantt
     HNDL Vulnerability Window      :done, 2034, 2042
 ```
 
+* **Boundary Condition:**
+  * $X + Y > Z$ → `inequality_triggered = True` (HNDL exposure window exists).
+  * $X + Y = Z$ → `inequality_triggered = False` (zero margin, but NOT triggered).
+  * $X + Y < Z$ → `inequality_triggered = False` (safe migration buffer).
+
 * **Decision Logic:**
 
-$$\text{Exposure Gap} = (X + Y) - Z$$
+$$\text{Exposure Gap} = \max(0, (X + Y) - Z)$$
 
-* **Condition 1 ($X + Y > Z$):** **CRITICAL HNDL EXPOSURE.**
-  Adversaries harvesting encrypted traffic today will be able to decrypt it before the data loses its confidentiality value. Migration must begin immediately.
-* **Condition 2 ($X + Y = Z$):** **ZERO MARGIN.**
-  Migration must start today; any delay will cause data to be exposed to post-quantum decryption.
-* **Condition 3 ($X + Y < Z$):** **CONTROLLED TIMELINE.**
-  The organization has a migration buffer of $Z - (X + Y)$ years before data confidentiality is compromised.
-* **Outputs:**
-  * `is_vulnerable`: Boolean flag
-  * `exposure_gap_years`: $\max(0, (X + Y) - Z)$
-  * `deadline_year`: $\text{Current Year} + (Z - X)$
-  * `urgency_rating`: `CRITICAL_IMMEDIATE` | `HIGH_PLANNED` | `MODERATE`
+* **Migration Deadline:** $Z - Y$ years from assessment date.
+
+* **HNDL Exposure Tiers (for Shor-vulnerable assets):**
+
+| Tier | Condition (X = protected lifetime, Z = quantum horizon) |
+| :--- | :--- |
+| `CRITICAL` | $X - Z > 5$ years AND `hndl_sensitive = True` |
+| `HIGH` | $X - Z > 0$ years (protected lifetime exceeds quantum horizon) |
+| `MEDIUM` | $-3 < X - Z \le 0$ (near quantum horizon) |
+| `LOW` | $X - Z \le -3$ (well within quantum horizon) or short-lived data |
+| `NONE` | Asset is quantum-resistant |
+| `UNKNOWN` | Insufficient information |
+
+  *Grover-impacted assets receive a capped maximum of MEDIUM (not CRITICAL), because Grover degrades rather than breaks security.*
+
+* **Urgency Tiers:**
+
+| Urgency | Derivation Condition |
+| :--- | :--- |
+| `IMMEDIATE` | $X + Y > Z$ AND `HNDL CRITICAL` or exposure gap ≤ 2 yrs |
+| `URGENT` | $X + Y > Z$ with MEDIUM/HIGH HNDL |
+| `PLANNED` | $X + Y \le Z$ but migration buffer ≤ 3 yrs, or HNDL HIGH |
+| `MONITOR` | Quantum-vulnerable with safe buffer |
+| `NOT_REQUIRED` | Library, Random, or NIST-approved PQC |
+| `UNKNOWN` | Insufficient inputs (missing X or Y) |
+
+  **CRITICAL**: Urgency is derived INDEPENDENTLY from the Risk Score. Risk measures vulnerability severity; Mosca urgency measures whether the migration timeline allows delay.
+
+* **Default Assumptions (all documented, not buried):**
+  * $Z = 10.0$ years (BASELINE scenario, NIST/ENISA/BSI consensus, 2021–2024).
+  * Migration time $Y$ by primitive class: Asymmetric 4.0 yrs, Symmetric 1.5 yrs, Hash 1.0 yr, Protocol 3.0 yrs.
+  * Scenarios: OPTIMISTIC (Z=7), BASELINE (Z=10), CONSERVATIVE (Z=15).
+  * Protected lifetime (X): **NO DEFAULT**. Returns UNKNOWN if not provided (no-fabrication policy).
+
+* **Outputs:** `MoscaAssessment` (per-asset: X, Y, Z, X+Y, triggered, gap, urgency, HNDL, deadline, assumptions, rationale), `MoscaAssessmentReport` (repository aggregate).
 * **Why Selected:** Recognized globally (NIST, ENISA, BSI, WEF) as the standard framework for post-quantum migration planning.
 
 ---

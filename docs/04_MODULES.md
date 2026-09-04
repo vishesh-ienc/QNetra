@@ -18,7 +18,7 @@
 | **Classification Engine** | `core.classification` | **Implemented** | High (P0) | Deterministic classical + quantum threat classification of `CryptoAsset` objects |
 | **CBOM Generator** | `core.cbom_generator` | **Implemented** | High (P0) | Generating CycloneDX 1.6+ JSON/XML CBOM artifacts from `CryptoAsset` list |
 | **Quantum Risk Engine** | `core.risk_engine` | **Implemented** | High (P0) | Computing deterministic quantum vulnerability risk scores (0–100) and severity ratings |
-| **Mosca Assessment Engine** | `core.mosca_engine` | Planned | High (P0) | Simulating $X+Y > Z$ migration timelines and HNDL risk |
+| **Mosca Assessment Engine** | `core.mosca_engine` | **Implemented** | High (P0) | Evaluating $X+Y > Z$ Mosca inequality, HNDL exposure, migration urgency, and deadline calculation |
 | **PQC Recommendation Engine**| `core.recommendation_engine`| Planned | High (P0) | Mapping vulnerable assets to NIST PQC/Hybrid replacements |
 | **Backend API Gateway** | `backend.api` | Planned | High (P0) | REST API endpoints for scans, data retrieval, and export |
 | **Storage Manager** | `backend.storage` | Planned | Medium (P1) | Session cache & lightweight historical scan persistence |
@@ -198,18 +198,22 @@
 ### 9. Mosca Assessment Engine
 * **Module Identifier:** `MOD-009`
 * **Path:** `core/mosca_engine`
-* **Purpose:** Executes Michele Mosca’s $X+Y > Z$ migration urgency analysis.
+* **Purpose:** Implements Michele Mosca's $X+Y > Z$ migration urgency and HNDL analysis engine.
 * **Responsibility:**
-  * Evaluate the inequality: Data Shelf Life ($X$) + Migration Time ($Y$) > Quantum Threat Horizon ($Z$).
-  * Calculate exposure gap $(X+Y) - Z$ in years.
-  * Highlight Harvest Now, Decrypt Later (HNDL) exposure periods.
-* **Inputs:** `RiskAssessmentReport`, User parameters ($X, Y, Z$).
-* **Outputs:** `MoscaAssessmentReport` (status, gap in years, deadline date, urgency rating).
-* **Dependencies:** Date and timeline calculation modules.
-* **Related Data Contracts:** `MoscaAssessmentReport`.
-* **Status:** Planned
+  * Evaluate Mosca inequality: Data Shelf Life ($X$) + Migration Time ($Y$) > Quantum Threat Horizon ($Z$).
+  * Calculate exposure gap $(X+Y) - Z$ and migration deadline (years from assessment date).
+  * Classify Harvest Now, Decrypt Later (HNDL) exposure tiers (CRITICAL/HIGH/MEDIUM/LOW/NONE/UNKNOWN).
+  * Derive migration urgency (IMMEDIATE/URGENT/PLANNED/MONITOR/NOT_REQUIRED/UNKNOWN).
+  * Handle NOT_APPLICABLE assets (Library, Random) and NIST-approved PQC (ML-KEM, ML-DSA, SLH-DSA).
+  * Reject invalid duration inputs (negative, NaN, infinite).
+  * Enforce no-fabrication: protected lifetime (X) has no silent default — returns UNKNOWN without it.
+* **Inputs:** Classified `CryptoAsset`, optional `MoscaInput` (X, Y, Z overrides, HNDL flag, assessment date).
+* **Outputs:** `MoscaAssessment` (per-asset), `MoscaAssessmentReport` (repository aggregate).
+* **Dependencies:** `core.models` (CryptoAsset, PrimitiveType).
+* **Related Data Contracts:** `MoscaAssessmentReport` (docs/06 §2.4), `MoscaAssessment`.
+* **Status:** Implemented (`v1.0.0` — Milestone 3.2)
 * **MVP Priority:** High (P0)
-* **Tests:** `tests/test_mosca_engine.py` (boundary tests: $X+Y < Z$, $X+Y = Z$, $X+Y > Z$).
+* **Tests:** `tests/test_core/test_mosca_engine.py` (95 tests: inequality boundary, HNDL, urgency, determinism, no-mutation, full pipeline).
 
 ---
 
