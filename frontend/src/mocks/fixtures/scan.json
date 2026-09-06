@@ -1,0 +1,138 @@
+{
+  "scan_id": "b2d93bc1-5678-4c28-98e3-b4c3e21199b0",
+  "name": "QNetra Sample Repositories",
+  "artifact_id": "a1f93bc1-1234-4c28-98e3-a4c3e21199a0",
+  "target": {
+    "target_id": "96cd916a-1e22-4d9a-9009-b264c56341ec",
+    "name": "qnetra-sample-repositories",
+    "target_type": "REPOSITORY",
+    "path": "samples/repository_samples"
+  },
+  "status": "COMPLETED",
+  "current_stage": "COMPLETED",
+  "created_at": "2026-09-06T10:01:00Z",
+  "started_at": "2026-09-06T12:15:25.197042+00:00",
+  "completed_at": "2026-09-06T12:15:25.234958+00:00",
+  "duration_seconds": 0.037916,
+  "progress": {
+    "stages": [
+      {
+        "name": "DISCOVERY",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "NORMALIZATION",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "CLASSIFICATION",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "CBOM",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "RISK_ANALYSIS",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "MOSCA_ANALYSIS",
+        "status": "COMPLETED"
+      },
+      {
+        "name": "PQC_ANALYSIS",
+        "status": "COMPLETED"
+      }
+    ],
+    "directories_visited": 5,
+    "files_discovered": 5,
+    "files_scanned": 5,
+    "files_skipped": 0,
+    "files_errored": 0,
+    "raw_findings_count": 269,
+    "assets_count": 130
+  },
+  "discovery": {
+    "findings_by_method": {
+      "IMPORT_ANALYSIS": 32,
+      "API_CALL": 37,
+      "REGEX": 173,
+      "AST": 27
+    },
+    "findings_by_category": {
+      "LIBRARY": 32,
+      "SYMMETRIC_CIPHER": 67,
+      "HASH_FUNCTION": 74,
+      "MAC": 15,
+      "ASYMMETRIC_PKC": 55,
+      "KDF": 17,
+      "DIGITAL_SIGNATURE": 3,
+      "PROTOCOL": 5,
+      "KEY_MATERIAL": 1
+    }
+  },
+  "normalization": {
+    "raw_findings_count": 269,
+    "assets_produced_count": 130,
+    "findings_merged_count": 139,
+    "merge_ratio": 0.5167,
+    "assets_by_algorithm": {
+      "SHA-256": 21,
+      "RSA": 20,
+      "AES": 18,
+      "HMAC": 10,
+      "openssl": 8,
+      "ECDSA": 8,
+      "MD5": 7,
+      "SHA-1": 5,
+      "PBKDF2": 5,
+      "bcrypt": 5,
+      "TLS": 3,
+      "Library: Node.js crypto": 3,
+      "SHA-512": 2,
+      "Library: javax.crypto": 2,
+      "DES": 2,
+      "Library: hashlib": 2,
+      "Library: cryptography": 2,
+      "AES-256-GCM": 1,
+      "AES-128-CBC": 1,
+      "Library: java.security": 1,
+      "AES-GCM": 1,
+      "Library: bcrypt": 1,
+      "AES-MODE_CBC": 1,
+      "AES-MODE_GCM": 1
+    },
+    "assets_by_primitive_type": {
+      "HASH_FUNCTION": 35,
+      "SYMMETRIC_CIPHER": 25,
+      "LIBRARY": 19,
+      "ASYMMETRIC_ENCRYPTION": 17,
+      "DIGITAL_SIGNATURE": 11,
+      "MAC": 10,
+      "KDF": 10,
+      "PROTOCOL": 3
+    },
+    "assets_by_library": {
+      "Unspecified": 88,
+      "hashlib": 9,
+      "OpenSSL": 8,
+      "cryptography": 8,
+      "pycryptodome": 5,
+      "Node.js crypto": 3,
+      "bcrypt": 3,
+      "javax.crypto": 2,
+      "hmac": 2,
+      "java.security": 1,
+      "ssl": 1
+    },
+    "assets_by_confidence_level": {
+      "HIGH": 73,
+      "VERY_HIGH": 26,
+      "LOW": 21,
+      "MEDIUM": 10
+    }
+  },
+  "errors": [],
+  "warnings": []
+}

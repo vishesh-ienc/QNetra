@@ -51,3 +51,7 @@ Thumbs.db
 # QNetra local runtime caches
 .cache/
 *.log
+
+# Frontend build output
+frontend/dist/
+frontend/.vite/

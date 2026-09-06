@@ -1,0 +1,144 @@
+{
+  "x_values": [
+    1.0,
+    3.0,
+    5.0,
+    10.0,
+    15.0,
+    20.0,
+    25.0
+  ],
+  "z_values": [
+    5.0,
+    10.0,
+    15.0
+  ],
+  "entries": [
+    {
+      "key": "x1-z5",
+      "data_shelf_life_years_x": 1.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x3-z5",
+      "data_shelf_life_years_x": 3.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 31
+    },
+    {
+      "key": "x5-z5",
+      "data_shelf_life_years_x": 5.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x10-z5",
+      "data_shelf_life_years_x": 10.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x15-z5",
+      "data_shelf_life_years_x": 15.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x20-z5",
+      "data_shelf_life_years_x": 20.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x25-z5",
+      "data_shelf_life_years_x": 25.0,
+      "quantum_threat_horizon_years_z": 5.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x1-z10",
+      "data_shelf_life_years_x": 1.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x3-z10",
+      "data_shelf_life_years_x": 3.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x5-z10",
+      "data_shelf_life_years_x": 5.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x10-z10",
+      "data_shelf_life_years_x": 10.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x15-z10",
+      "data_shelf_life_years_x": 15.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x20-z10",
+      "data_shelf_life_years_x": 20.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x25-z10",
+      "data_shelf_life_years_x": 25.0,
+      "quantum_threat_horizon_years_z": 10.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x1-z15",
+      "data_shelf_life_years_x": 1.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x3-z15",
+      "data_shelf_life_years_x": 3.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x5-z15",
+      "data_shelf_life_years_x": 5.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x10-z15",
+      "data_shelf_life_years_x": 10.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 0
+    },
+    {
+      "key": "x15-z15",
+      "data_shelf_life_years_x": 15.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x20-z15",
+      "data_shelf_life_years_x": 20.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 111
+    },
+    {
+      "key": "x25-z15",
+      "data_shelf_life_years_x": 25.0,
+      "quantum_threat_horizon_years_z": 15.0,
+      "mosca_triggered_assets": 111
+    }
+  ]
+}

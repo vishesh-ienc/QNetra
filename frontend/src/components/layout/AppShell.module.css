@@ -1,0 +1,62 @@
+.shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.aside {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex: none;
+  z-index: var(--z-nav);
+}
+
+.navScrim {
+  display: none;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+}
+
+.container {
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 0 var(--sp-10) var(--sp-20);
+}
+
+@media (max-width: 1280px) {
+  .container {
+    padding-inline: var(--sp-8);
+  }
+}
+
+@media (max-width: 900px) {
+  .aside {
+    position: fixed;
+    inset: 0 auto 0 0;
+    transform: translateX(-100%);
+    transition: transform var(--dur) var(--ease);
+    box-shadow: var(--shadow-lg);
+  }
+  .asideOpen {
+    transform: translateX(0);
+  }
+  .navScrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-overlay);
+    background: rgba(4, 5, 7, 0.6);
+  }
+  .container {
+    padding-inline: var(--sp-4);
+  }
+}

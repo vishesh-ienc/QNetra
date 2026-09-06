@@ -1,0 +1,274 @@
+/* --- Dropzone ------------------------------------------------------------- */
+
+.dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-12);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-sunken);
+  transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+
+.dropzoneActive {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+}
+
+.dropTitle {
+  font-size: var(--text-h2);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.dropCopy {
+  max-width: var(--reading-max);
+  margin-bottom: var(--sp-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-tertiary);
+}
+
+.selection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.selectionName {
+  font-family: var(--font-mono);
+  font-size: var(--text-h3);
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.selectionMeta {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.selectionActions {
+  display: flex;
+  gap: var(--sp-3);
+  margin-top: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.startError {
+  margin-top: var(--sp-6);
+}
+
+.modeNote {
+  margin-top: var(--sp-6);
+  padding-left: var(--sp-4);
+  border-left: 2px solid var(--border);
+  max-width: var(--reading-max);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-quiet);
+}
+
+/* --- Diagnostics ---------------------------------------------------------- */
+
+.diagnostics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--sp-6);
+  margin-top: var(--sp-10);
+}
+
+.diagnosticList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.diagnosticList li {
+  position: relative;
+  padding-left: var(--sp-4);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.diagnosticList li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--sev);
+}
+
+/* --- Stages --------------------------------------------------------------- */
+
+.stages {
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subtle);
+  margin-left: 11px;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  gap: var(--sp-4);
+  padding: var(--sp-4) 0 var(--sp-4) var(--sp-6);
+}
+
+.stageGlyph {
+  position: absolute;
+  left: -11px;
+  top: var(--sp-4);
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--sev-border, var(--border));
+  color: var(--sev);
+  font-size: 10px;
+}
+
+.stageBody {
+  min-width: 0;
+}
+
+.stageHead {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.stageName {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.stageStatus {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--sev);
+}
+
+.stageQuestion {
+  margin-top: var(--sp-1);
+  max-width: var(--reading-max);
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+/* --- Normalization -------------------------------------------------------- */
+
+.normalization {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-12);
+}
+
+.funnel {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-8);
+  padding: var(--sp-8);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  flex-wrap: wrap;
+}
+
+.funnelStep {
+  min-width: 140px;
+}
+
+.funnelValue {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--text-primary);
+}
+
+.funnelLabel {
+  margin-top: var(--sp-2);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.funnelArrow {
+  font-size: var(--text-h2);
+  color: var(--text-quiet);
+}
+
+.funnelAside {
+  margin-left: auto;
+  padding-left: var(--sp-8);
+  border-left: 1px solid var(--border-subtle);
+}
+
+.funnelAsideValue {
+  font-size: var(--text-h1);
+  font-weight: 600;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.breakdowns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--sp-10);
+}
+
+.breakdownList {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-direction: column;
+}
+
+.breakdownRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.breakdownRow:last-child {
+  border-bottom: none;
+}
+
+.breakdownLabel {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.breakdownCount {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  .dropzone {
+    padding: var(--sp-8);
+  }
+  .funnelAside {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--sp-4);
+    width: 100%;
+  }
+}

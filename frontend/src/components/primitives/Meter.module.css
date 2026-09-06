@@ -1,0 +1,39 @@
+.track {
+  position: relative;
+  width: 100%;
+  border-radius: 999px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+
+.md { height: 6px; }
+.sm { height: 4px; }
+
+.fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--sev);
+  transition: width var(--dur-slow) var(--ease);
+}
+
+.empty {
+  background: var(--surface-2);
+}
+
+.distribution {
+  display: flex;
+  gap: 2px;
+  height: 8px;
+  width: 100%;
+}
+
+.segment {
+  min-width: 3px;
+  border-radius: 2px;
+  background: var(--sev);
+  transition: flex-grow var(--dur-slow) var(--ease);
+}
+
+.segment:first-child { border-radius: 999px 2px 2px 999px; }
+.segment:last-child { border-radius: 2px 999px 999px 2px; }
+.segment:only-child { border-radius: 999px; }

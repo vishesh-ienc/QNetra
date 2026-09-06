@@ -1,0 +1,120 @@
+.bar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  height: var(--topbar-height);
+  padding: 0 var(--sp-8);
+  background: rgba(10, 11, 13, 0.86);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.navToggle {
+  display: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+
+.navToggle:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.context {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
+  flex: 1;
+}
+
+.scanName {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.scanSelect select {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  padding: 4px 8px;
+  max-width: 240px;
+}
+
+.target {
+  font-size: var(--text-xs);
+  color: var(--text-quiet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.metaItem .numeric {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.metaDivider {
+  width: 1px;
+  height: 12px;
+  background: var(--border);
+}
+
+.sourceChip {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-tertiary);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  cursor: help;
+}
+
+@media (max-width: 1180px) {
+  .meta .metaItem:not(:last-of-type),
+  .meta .metaDivider {
+    display: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .bar {
+    padding: 0 var(--sp-4);
+  }
+  .navToggle {
+    display: grid;
+    place-items: center;
+  }
+  .target {
+    display: none;
+  }
+}

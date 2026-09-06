@@ -1,0 +1,168 @@
+/* Fonts are bundled rather than fetched from a CDN: QNetra is expected to run in
+   restricted and air-gapped enterprise networks, and typography must not depend
+   on outbound access. */
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "./tokens.css";
+
+/* ==========================================================================
+   Reset + base typography
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd,
+ul,
+ol {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--leading-normal);
+  font-feature-settings: "cv02", "cv03", "cv04", "tnum";
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  line-height: var(--leading-tight);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+::selection {
+  background: var(--accent-wash-strong);
+}
+
+/* --- Scrollbars ---------------------------------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border: 3px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #454c58;
+  background-clip: content-box;
+}
+
+/* --- Shared utility classes ---------------------------------------------- */
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  letter-spacing: -0.01em;
+}
+
+.eyebrow {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.numeric {
+  font-variant-numeric: tabular-nums;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Severity text/colour helpers, keyed by data attribute so any element
+   can adopt the semantic colour without a bespoke class. */
+[data-sev="CRITICAL"] { --sev: var(--critical); --sev-wash: var(--critical-wash); --sev-border: var(--critical-border); }
+[data-sev="HIGH"]     { --sev: var(--high);     --sev-wash: var(--high-wash);     --sev-border: var(--high-border); }
+[data-sev="MEDIUM"]   { --sev: var(--medium);   --sev-wash: var(--medium-wash);   --sev-border: var(--medium-border); }
+[data-sev="LOW"]      { --sev: var(--low);      --sev-wash: var(--low-wash);      --sev-border: var(--low-border); }
+[data-sev="SAFE"]     { --sev: var(--safe);     --sev-wash: var(--safe-wash);     --sev-border: var(--safe-border); }
+[data-sev="UNKNOWN"]  { --sev: var(--unknown);  --sev-wash: var(--unknown-wash);  --sev-border: var(--unknown-border); }
+[data-sev="ACCENT"]   { --sev: var(--accent);   --sev-wash: var(--accent-wash);   --sev-border: var(--accent-quiet); }

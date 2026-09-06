@@ -1,0 +1,234 @@
+.filterBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-6);
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.filters {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex: none;
+}
+
+/* --- Search --------------------------------------------------------------- */
+
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+}
+
+.searchGlyph {
+  position: absolute;
+  left: 10px;
+  color: var(--text-quiet);
+  font-size: 15px;
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 7px 30px 7px 30px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.searchInput::placeholder {
+  color: var(--text-quiet);
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: var(--accent-quiet);
+  background: var(--surface-3);
+}
+
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+
+.clear {
+  position: absolute;
+  right: 8px;
+  color: var(--text-quiet);
+  font-size: 11px;
+  padding: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.clear:hover {
+  color: var(--text-primary);
+}
+
+/* --- Select --------------------------------------------------------------- */
+
+.select {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 8px 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  transition: border-color var(--dur-fast) var(--ease);
+}
+
+.select:hover {
+  border-color: var(--border-strong);
+}
+
+.selectActive {
+  border-color: var(--accent-quiet);
+  background: var(--accent-wash);
+}
+
+.selectLabel {
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.selectActive .selectLabel {
+  color: var(--accent);
+}
+
+.select select {
+  border: none;
+  background: none;
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  max-width: 190px;
+  cursor: pointer;
+}
+
+.select select:focus {
+  outline: none;
+}
+
+.select option {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+/* --- Segmented ------------------------------------------------------------ */
+
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  gap: 2px;
+}
+
+.segment {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.segment:hover {
+  color: var(--text-secondary);
+}
+
+.segmentActive {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+
+.segmentCount {
+  font-size: var(--text-micro);
+  color: var(--text-quiet);
+}
+
+.segmentActive .segmentCount {
+  color: var(--text-tertiary);
+}
+
+/* --- Button --------------------------------------------------------------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px 14px;
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease),
+    color var(--dur-fast) var(--ease), opacity var(--dur-fast) var(--ease);
+}
+
+.primary {
+  background: var(--accent);
+  color: #06080c;
+  font-weight: 600;
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.secondary {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.ghost {
+  color: var(--text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--surface-2);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.reset {
+  font-size: var(--text-xs);
+  color: var(--accent);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.reset:hover {
+  background: var(--accent-wash);
+}

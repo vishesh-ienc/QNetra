@@ -1,0 +1,42 @@
+.primaryCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.primaryValue {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.secondaryValue {
+  font-size: var(--text-xs);
+  color: var(--text-quiet);
+}
+
+.muted {
+  color: var(--text-quiet);
+  font-size: var(--text-xs);
+}
+
+.score {
+  font-size: var(--text-h3);
+  font-weight: 600;
+  color: var(--sev, var(--text-primary));
+}
+
+.pad {
+  padding: var(--sp-6);
+}
+
+.snippet {
+  display: block;
+  max-width: 420px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}

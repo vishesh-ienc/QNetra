@@ -1,0 +1,51 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+}
+
+.md {
+  padding: 3px 8px;
+  font-size: var(--text-xs);
+}
+
+.sm {
+  padding: 2px 6px;
+  font-size: var(--text-micro);
+}
+
+.quiet {
+  background: var(--sev-wash);
+  color: var(--sev);
+}
+
+.solid {
+  background: var(--sev);
+  color: #0a0b0d;
+}
+
+.outline {
+  border: 1px solid var(--sev-border);
+  color: var(--sev);
+}
+
+.dot {
+  padding-left: 0;
+  padding-right: 0;
+  background: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.dotMark {
+  width: 6px;
+  height: 6px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sev);
+}

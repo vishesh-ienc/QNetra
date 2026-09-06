@@ -1,0 +1,113 @@
+.figure {
+  margin: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  overflow: hidden;
+}
+
+.caption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  font-size: var(--text-xs);
+}
+
+.path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+}
+
+.dir {
+  color: var(--text-quiet);
+}
+
+.file {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.lineRef {
+  flex: none;
+  color: var(--text-tertiary);
+}
+
+.symbol {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.symbol code {
+  font-size: var(--text-sm);
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.code {
+  margin: 0;
+  padding: var(--sp-3) 0;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.7;
+  tab-size: 2;
+}
+
+.line {
+  display: flex;
+  gap: var(--sp-3);
+  padding-right: var(--sp-4);
+  white-space: pre;
+}
+
+.gutter {
+  flex: none;
+  width: 48px;
+  padding-right: var(--sp-3);
+  text-align: right;
+  color: var(--text-quiet);
+  user-select: none;
+  border-right: 1px solid var(--border-subtle);
+}
+
+.gutterRule {
+  flex: none;
+  width: 12px;
+  border-right: 1px solid var(--border-subtle);
+  margin-right: var(--sp-1);
+}
+
+.lineText {
+  color: var(--text-secondary);
+  padding-left: var(--sp-2);
+}
+
+.noSnippet {
+  padding: var(--sp-4);
+  font-size: var(--text-xs);
+  color: var(--text-quiet);
+}
+
+.pathRef {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  font-size: var(--text-xs);
+}
+
+.pathLine {
+  color: var(--text-tertiary);
+}

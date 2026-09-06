@@ -1,186 +1,117 @@
 # current_prompt_update.md — Per-Prompt Implementation Summary
 
-> **RULE-012 MANDATORY:** This file is overwritten on every prompt turn.  
-> **Agent:** AI Coding Agent  
-> **Timestamp:** 2026-09-04T17:25:00+05:30  
-> **Milestone:** Phase 3.3 Corrective Pass — Recommendation Type Terminology Disambiguation  
-> **Status:** ✅ COMPLETE
+> **RULE-012 MANDATORY:** This file is overwritten on every prompt turn.
+> **Agent:** AI Coding Agent
+> **Timestamp:** 2026-09-06T12:40:00+05:30
+> **Milestone:** Phase 4 (partial) — Frontend Presentation Layer, built from scratch
+> **Branch:** `claude/qnetra-frontend-build-bobfkf`
+> **Status:** ✅ IMPLEMENTED — reviewed in-browser, **not committed** (held for user review)
 
 ---
 
 ## 1. Objective
 
-Perform a focused, non-disruptive corrective pass on the Phase 3 Milestone 3.3 NIST PQC Recommendation Engine (`core/recommendation_engine/`) to ensure that **classical cryptographic strengthening recommendations are not incorrectly labeled as `DIRECT_PQC`**.
+Build the entire QNetra frontend from scratch as a premium enterprise cryptographic-intelligence
+product, consuming `docs/10_API_CONTRACT.md` and following `docs/11_FRONTEND_PRODUCT_SPEC.md`.
+No backend, core, or scanner code was to be modified.
 
 ---
 
-## 2. Terminology Issue Found
+## 2. Constraint Compliance
 
-In the initial Milestone 3.3 implementation, classical algorithm upgrades were routed with `recommendation_type = PQCRecommendationType.DIRECT_PQC`. Examples:
-* `SHA-256 → SHA-384` (hash length upgrade to resist Grover/BHT collision degradation)
-* `AES-128 → AES-256-GCM` (symmetric key-length upgrade to resist Grover search)
-* `DES / 3DES → AES-256-GCM` (classically broken symmetric cipher upgrade)
-* `MD5 / SHA-1 → SHA-256` (classically broken hash upgrade)
-* `HMAC-MD5 → HMAC-SHA-256` (classically broken MAC upgrade)
-
-These upgrades strengthen classical cryptographic parameters or replace broken classical ciphers with secure classical ciphers. They do **NOT** deploy Post-Quantum Cryptography (PQC) algorithms (such as NIST FIPS 203 ML-KEM or FIPS 204 ML-DSA). Labeling them `DIRECT_PQC` could cause the frontend, security auditors, or enterprise users to mistakenly believe that `SHA-384` or `AES-256-GCM` are post-quantum algorithms.
-
----
-
-## 3. Changes Made
-
-1. **`core/recommendation_engine/models.py`**:
-   * Added `CLASSICAL_UPGRADE = "CLASSICAL_UPGRADE"` to the `PQCRecommendationType` enum.
-   * Added `classical_upgrade_count: int = 0` to `PQCRecommendationReport` dataclass.
-   * Updated `PQCRecommendationReport.to_dict()` to include `"classical_upgrade_count"`.
-
-2. **`core/recommendation_engine/mapper.py`**:
-   * Updated `_map_hash_function()`:
-     - Classically broken hashes (`MD5`, `SHA-1` → `SHA-256`): set `recommendation_type = PQCRecommendationType.CLASSICAL_UPGRADE`.
-     - Grover-impacted hashes (`SHA-256` → `SHA-384`): set `recommendation_type = PQCRecommendationType.CLASSICAL_UPGRADE`.
-   * Updated `_map_symmetric_cipher()`:
-     - Classically broken ciphers (`DES`, `3DES`, `RC4` → `AES-256-GCM`): set `recommendation_type = PQCRecommendationType.CLASSICAL_UPGRADE`.
-     - Grover key-length upgrades (`AES-128` → `AES-256` / `AES-256-GCM`): set `recommendation_type = PQCRecommendationType.CLASSICAL_UPGRADE`.
-   * Updated `map_asset_to_recommendation()` Step 6 (MAC/KDF):
-     - Classically broken MACs/KDFs (`HMAC-MD5` → `HMAC-SHA-256`): set `recommendation_type = PQCRecommendationType.CLASSICAL_UPGRADE`.
-   * Updated routing docstrings and rationale text to explicitly state "classical upgrade".
-
-3. **`core/recommendation_engine/engine.py`**:
-   * Added `classical_upgrade_count` tracking in `RecommendationEngine.generate_report()`.
-   * Populated `classical_upgrade_count` in returned `PQCRecommendationReport`.
-
-4. **`tests/test_core/test_recommendation_engine.py`**:
-   * Updated existing assertions in `TestImportsAndModelInvariants`, `TestHashFunctions`, `TestSymmetricCiphers`, `TestBatchAndReport`, `TestClassicallyBroken`, `TestMacKdf`, `TestSerialization`, and `TestFullPipelineIntegration`.
-   * Added dedicated test class `TestClassicalUpgradeCorrectivePass` with 14 comprehensive tests, including a regression test verifying no classical strengthening mapping returns `DIRECT_PQC`.
-
----
-
-## 4. Recommendation Types Taxonomy
-
-With `CLASSICAL_UPGRADE` introduced, the semantic taxonomy is:
-
-| Type | Semantic Definition | Examples | PQC Standard |
-| :--- | :--- | :--- | :--- |
-| `DIRECT_PQC` | Classical primitive directly replaced by a NIST PQC algorithm | `DSA → ML-DSA-65`, `RSA (sig) → ML-DSA-65` | NIST FIPS 204 |
-| `CLASSICAL_UPGRADE` | Weak/insufficient classical primitive upgraded to stronger classical primitive | `SHA-256 → SHA-384`, `AES-128 → AES-256-GCM`, `DES → AES-256-GCM`, `MD5 → SHA-256` | `None` |
-| `HYBRID` | Classical primitive paired with PQC primitive in dual mode | `ECDH → X25519 + ML-KEM-768`, `ECDSA → Ed25519 + ML-DSA-65`, `RSA (enc) → ML-KEM-768` | NIST FIPS 203 / 204 |
-| `ALREADY_PQC` | Asset is already using an approved NIST PQC algorithm | `ML-KEM-768`, `ML-DSA-65`, `SLH-DSA-SHA2-128s` | NIST FIPS 203/204/205 |
-| `NO_MIGRATION_REQUIRED` | Asset does not require cryptographic migration | `AES-256`, `SHA-384`, `SHA-512`, `OpenSSL (LIBRARY)`, `PRNG (RANDOM)`, `TLS (PROTOCOL)` | `None` |
-| `UNKNOWN` | Reliable recommendation cannot be determined | Proprietary or unrecognized algorithms (no fabrication) | `None` |
-
----
-
-## 5. Mappings Affected
-
-### Classical Upgrades (Corrected to `CLASSICAL_UPGRADE`)
-* `SHA-256 → SHA-384` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `SHA-224 → SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `MD5 → SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `SHA-1 → SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `MD4 → SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `RIPEMD-160 → SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `AES-128 → AES-256` / `AES-256-GCM` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `DES → AES-256-GCM` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `3DES → AES-256-GCM` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `RC4 → AES-256-GCM` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-* `HMAC-MD5 → HMAC-SHA-256` : `CLASSICAL_UPGRADE` (was `DIRECT_PQC`)
-
-### Genuine PQC Recommendations (Preserved Unchanged)
-* `RSA (key transport / enc) → ML-KEM-768/1024` : `HYBRID` (`X25519 + ML-KEM-768`)
-* `ECDH / DH / X25519 → ML-KEM-768/1024` : `HYBRID` (`X25519 + ML-KEM-768`)
-* `ECDSA / Ed25519 → ML-DSA-65/87` : `HYBRID` (`Ed25519 + ML-DSA-65`)
-* `DSA → ML-DSA-65/87` : `DIRECT_PQC` (FIPS 204)
-* `RSA (signature) → ML-DSA-65/87` : `DIRECT_PQC` (FIPS 204)
-* `ML-KEM-512/768/1024` : `ALREADY_PQC` (FIPS 203)
-* `ML-DSA-44/65/87` : `ALREADY_PQC` (FIPS 204)
-* `SLH-DSA-*` : `ALREADY_PQC` (FIPS 205)
-
----
-
-## 6. Tests Added & Updated
-
-### Modified Existing Tests
-* `test_pqc_recommendation_type_values`: validates `CLASSICAL_UPGRADE` enum member.
-* `test_sha256_gets_sha384_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_sha1_gets_sha256_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_md5_gets_sha256_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_aes128_gets_aes256_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_des_gets_aes256_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_md5_hash_gets_sha256`: asserts `CLASSICAL_UPGRADE`.
-* `test_sha1_gets_sha256`: asserts `CLASSICAL_UPGRADE`.
-* `test_des_symmetric_gets_aes256`: asserts `CLASSICAL_UPGRADE`.
-* `test_hmac_md5_gets_direct_pqc_upgrade`: asserts `CLASSICAL_UPGRADE`.
-* `test_report_to_dict_all_fields_present`: verifies `classical_upgrade_count` present in dict.
-* `test_generate_report_empty_list`: asserts `classical_upgrade_count == 0`.
-* `test_generate_report_counts_types_correctly`: verifies count distribution including `classical_upgrade_count == 1`.
-* `test_full_pipeline_289_findings_to_147_recommendations`: includes `classical_upgrade_count` in sum (sum == 147).
-
-### New Test Class: `TestClassicalUpgradeCorrectivePass` (14 new tests)
-1. `test_sha256_to_sha384_is_classical_upgrade`
-2. `test_aes128_to_aes256_gcm_is_classical_upgrade`
-3. `test_des_to_aes256_gcm_is_classical_upgrade`
-4. `test_3des_to_aes256_gcm_is_classical_upgrade`
-5. `test_md5_to_sha256_is_classical_upgrade`
-6. `test_sha1_to_sha256_is_classical_upgrade`
-7. `test_genuine_pqc_rsa_encryption_remains_hybrid`
-8. `test_genuine_pqc_ecdh_remains_hybrid`
-9. `test_genuine_pqc_ecdsa_remains_hybrid`
-10. `test_genuine_pqc_dsa_remains_direct_pqc`
-11. `test_genuine_pqc_rsa_signature_remains_direct_pqc`
-12. `test_genuine_pqc_already_pqc_remains_already_pqc`
-13. `test_regression_no_classical_upgrade_mapping_is_labeled_direct_pqc` (regression check across 14 classical asset configurations)
-14. `test_classical_upgrade_serialization_in_to_dict` (JSON serialization roundtrip)
-
----
-
-## 7. Test Results & Coverage
-
-```text
-Full Test Suite: 526 passed, 1 skipped in 1.44s
-Recommendation Engine: 118 passed in 0.52s
-Regressions: 0
-```
-
-### Coverage (`core.recommendation_engine`):
-| Module | Stmts | Miss | Cover |
-| :--- | :--- | :--- | :--- |
-| `__init__.py` | 3 | 0 | **100%** |
-| `engine.py` | 50 | 0 | **100%** |
-| `knowledge.py` | 62 | 0 | **100%** |
-| `mapper.py` | 197 | 26 | **87%** |
-| `models.py` | 60 | 0 | **100%** |
-| **TOTAL** | **372** | **26** | **93%** |
-
----
-
-## 8. Documentation Updated
-
-| Document | Sections Updated |
+| Constraint | Status |
 | :--- | :--- |
-| `docs/04_MODULES.md` | MOD-010: Added `CLASSICAL_UPGRADE` distinction, updated test counts (118 tests), updated status to `v1.1.0`. |
-| `docs/05_ALGORITHMS.md` | Alg-08: Updated Step 3, 4, 5 in routing pseudocode to return `CLASSICAL_UPGRADE`, updated Output Contract enum list. |
-| `docs/07_PROGRESS.md` | Updated Milestone 3.3 description with `CLASSICAL_UPGRADE` details, updated test metrics (526 passed), added change log entry. |
-| `docs/08_DECISIONS_AND_LOG.md` | DEC-016: Updated Decision point 3, Consequences, and added Addendum for Phase 3.3 Corrective Pass. |
-| `docs/09_KNOWLEDGE_BASE.md` | Added Section 5: "Post-Quantum Migration vs. Classical Cryptographic Strengthening" with full comparison table; renumbered subsequent sections. |
-| `PROJECT_CONTEXT.md` | Updated Recommendation Engine summary with 6 outcome types, `classical_upgrade_count`, and 526 passing tests. |
-| `current_status.md` | Updated status line, executive snapshot, and test health metrics. |
-| `current_prompt_update.md` | This file (overwritten per RULE-012). |
+| No changes to `backend/`, `core/`, `scanners/` | ✅ Verified — `git status` shows changes only under `frontend/` plus `.gitignore` |
+| No security logic in the frontend | ✅ Risk, quantum classification, Mosca, PQC selection, CBOM and confidence all come from the API. `src/lib/` holds formatting and vocabulary only |
+| No invented security data | ✅ Values the pipeline cannot produce render as an explicit `<Unavailable>` state (e.g. quantum-readiness score, migration timeframes) |
+| No API contract changes | ✅ Divergences and requests are recorded in `frontend/API_GAPS.md`, not implemented |
+| RULE-004 layer separation | ✅ All access goes through `src/api/`; components never build URLs or import engine concepts |
 
 ---
 
-## 9. Architectural Independence & Invariants Confirmation
+## 3. Critical Finding: the API gateway does not exist
 
-* **Risk Score Independence:** Recommendation routing function `map_asset_to_recommendation()` continues to determine recommendations solely from `(algorithm, primitive_type, key_length_bits, curve)`. `asset.risk_score` is **never read**.
-* **Mosca Urgency Independence:** Mosca urgency and timeline fields are **never read** during recommendation selection.
-* **No Mutation:** `recommend()` and `recommend_all()` remain purely functional; the input `CryptoAsset` instances are never modified.
-* **No Fabrication:** Unknown algorithms continue to return `UNKNOWN` with `recommended_algorithm=None`. Parameter defaults are recorded as explicit assumptions.
-* **Determinism:** Results are strictly reproducible and sorted by `asset_id`.
+`backend/` contains only `.gitkeep`. Nothing in `docs/10_API_CONTRACT.md` is reachable, so the
+frontend was built against the contract with two interchangeable transports:
+
+* **`live`** — speaks the contract to the FastAPI gateway (`VITE_API_MODE=live`).
+* **`mock`** *(default)* — answers the same contract from JSON fixtures.
+
+`frontend/tools/generate_fixtures.py` produces those fixtures by running the **real** pipeline
+(`scanners.repository` → `core.normalization` → `core.classification` → `core.risk_engine` →
+`core.mosca_engine` → `core.recommendation_engine` → `core.cbom_generator`) over
+`samples/repository_samples/`. Real output: 269 raw findings → 130 canonical assets, overall risk
+85.2 (CRITICAL), 111/111 applicable assets failing X + Y > Z at X=10 / Z=10, 130 CBOM components.
+No fixture value is hand-authored.
 
 ---
 
-## 10. Remaining Limitations & Next Steps
+## 4. Files Created
 
-* **Limitations:**
-  - Hybrid recommendations currently cover key exchange (`X25519 + ML-KEM-768`) and signatures (`Ed25519 + ML-DSA-65`). Other specialized hybrids (e.g. SPHINCS+ hybrid) remain out of scope for MVP.
-  - Parameter selection uses deterministic policy thresholds (RSA ≥ 3072 / ECC ≥ 384 bits); fine-grained protocol-specific cipher suite configuration is deferred to Phase 4 remediation guide rendering.
-* **Next Steps:** Proceed to **Phase 4: Full-Stack Integration** (`backend/api/` FastAPI REST gateway and `frontend/` interactive web dashboard).
+| Area | Path | Purpose |
+| :--- | :--- | :--- |
+| Tooling | `frontend/tools/generate_fixtures.py` | Runs the real pipeline, serialises API-shaped fixtures (incl. a 21-point Mosca X/Z grid) |
+| API | `frontend/src/api/{client,types,endpoints,queries,capabilities}.ts` | Transport switch, contract types, one function per route, React Query hooks |
+| Mock | `frontend/src/mocks/transport.ts`, `frontend/src/mocks/fixtures/**` | Fixture transport with server-equivalent filter/sort/paginate |
+| Design system | `frontend/src/styles/{tokens,base}.css` | Near-black foundation, graphite surfaces, restrained blue accent, semantic severity via `data-sev`, 4→80px spacing scale, bundled Inter + JetBrains Mono |
+| Primitives | `frontend/src/components/primitives/*` | Badge, DataTable, Drawer, Panel, Section, Meter, DistributionBar, ScoreDial, CodeEvidence, Controls, PageHeader, state components |
+| Layout | `frontend/src/components/layout/*` | AppShell, SideNav (grouped by question), TopBar |
+| Features | `frontend/src/features/asset/*`, `frontend/src/features/finding/*` | Investigation drawers and the `asset_id` join across the four engine views |
+| Pages | `frontend/src/pages/*` | Command Center, Scan, Assets, Findings, CBOM, Risk, Quantum, Mosca, Migration, Reports |
+| State | `frontend/src/state/{scanContext.ts,ScanContext.tsx,useScanContext.ts}` | Global scan selection with polling while a scan runs |
+| Docs | `frontend/README.md`, `frontend/API_GAPS.md`, `frontend/.env.example` | Architecture, design system, and the gap register |
+
+Modified outside `frontend/`: `.gitignore` only (ignores `frontend/dist/`, `frontend/.vite/`).
+
+---
+
+## 5. Product Structure
+
+Ten views, each answering one question, with a long editorial Command Center rather than a metric
+grid. Progressive disclosure throughout: conclusion → explanation → detail → evidence. The asset
+drawer traces risk → classification → Mosca terms → recommendation → supporting findings → the
+exact source excerpt the scanner recorded, with each engine's own rationale and assumptions shown
+verbatim.
+
+---
+
+## 6. Verification
+
+| Check | Result |
+| :--- | :--- |
+| `tsc --noEmit` | ✅ Clean |
+| `npm run lint` (oxlint) | ✅ Clean — 0 warnings |
+| `npm run build` | ✅ Clean |
+| Browser smoke test, all 10 routes | ✅ 0 console errors, 0 page errors |
+| Drawers (asset, finding, CBOM), search, filters, sorting, pagination | ✅ Working |
+| Mosca recomputation via the engine grid | ✅ X=1 → 0/111 fail; X=10 → 111/111 (80 immediate); X=25 → 111/111 (28 immediate, 83 urgent) |
+| Responsive at 1440 / 1024 / 820 / 390 px | ✅ No horizontal overflow at any width |
+| Honest failure on "Start scan" without the API | ✅ Structured `NOT_IMPLEMENTED` message, no simulated scan |
+
+---
+
+## 7. Gaps Identified (documented, not worked around)
+
+1. **No API gateway** — `backend/` unimplemented; frontend runs on the offline engine dataset.
+2. **Contract vs. engines** — Mosca, recommendation and risk response shapes in `docs/10` do not
+   match `to_dict()` output. Types follow the engines; `docs/10 §9/§12/§13` need updating.
+3. **`/quantum` has no engine** — no `core.quantum_analysis`; the page uses `/risk` + `/assets`.
+   `quantum_readiness_score` is not computed anywhere and is shown as unavailable.
+4. **`/migration` has no engine** — no `core.migration_planner`; the page groups by the Mosca
+   urgency and recommendation type the engines already assign. No dates are invented.
+5. **Contract additions requested** — `q` search on list endpoints, `quantum_threat_type` filter
+   on `/assets`, facet counts on the scan resource.
+
+Full detail in `frontend/API_GAPS.md`.
+
+---
+
+## 8. Context Handoff
+
+* Nothing is committed. `frontend/` is untracked and `.gitignore` is modified.
+* Run: `cd frontend && npm install && npm run dev`.
+* Regenerate the dataset after any engine change: `python frontend/tools/generate_fixtures.py`.
+* Next backend milestone (Phase 4, `backend/`): implement the FastAPI gateway; set
+  `VITE_API_MODE=live` and the frontend switches over with no component changes.
+* Recommended follow-up: reconcile `docs/10_API_CONTRACT.md` with the implemented engines before
+  the gateway is written, so the API is built once against a correct contract.

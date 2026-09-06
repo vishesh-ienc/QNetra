@@ -1,0 +1,117 @@
+.nav {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: var(--nav-width);
+  padding: var(--sp-6) 0 var(--sp-6);
+  background: var(--bg-sunken);
+  border-right: 1px solid var(--border-subtle);
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 0 var(--sp-6) var(--sp-8);
+  color: var(--accent);
+}
+
+.mark {
+  width: 26px;
+  height: 26px;
+  flex: none;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.brandName {
+  font-size: var(--text-h3);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.brandSub {
+  font-size: var(--text-micro);
+  letter-spacing: 0.04em;
+  color: var(--text-quiet);
+}
+
+.groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-8);
+  flex: 1;
+}
+
+.groupLabel {
+  padding: 0 var(--sp-6);
+  margin-bottom: var(--sp-3);
+  font-size: var(--text-micro);
+  font-weight: 600;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 7px var(--sp-6);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+}
+
+.link:hover {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+
+.linkRule {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: transparent;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.active {
+  color: var(--text-primary);
+  background: var(--surface-1);
+}
+
+.active .linkRule {
+  background: var(--accent);
+}
+
+.pending {
+  color: var(--text-quiet);
+}
+
+.pendingDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  margin-left: auto;
+}
+
+.footer {
+  padding: var(--sp-8) var(--sp-6) 0;
+  font-size: var(--text-micro);
+  line-height: 1.6;
+  color: var(--text-quiet);
+}

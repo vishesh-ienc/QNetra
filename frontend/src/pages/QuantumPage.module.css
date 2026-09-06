@@ -1,0 +1,85 @@
+.classes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--sp-1) var(--sp-16);
+  padding-top: var(--sp-4);
+}
+
+.class {
+  padding: var(--sp-8) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.classHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+
+.classCount {
+  font-size: 2.75rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: var(--tracking-tight);
+  color: var(--sev);
+  min-width: 72px;
+}
+
+.classHeading {
+  flex: 1;
+  min-width: 0;
+  padding-top: var(--sp-1);
+}
+
+.classTitle {
+  margin-bottom: var(--sp-3);
+  font-size: var(--text-h3);
+  color: var(--text-primary);
+}
+
+.classCopy {
+  margin-top: var(--sp-4);
+  padding-left: calc(72px + var(--sp-4));
+  max-width: var(--reading-max);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-tertiary);
+}
+
+.bits {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.bitsClassical {
+  color: var(--text-secondary);
+}
+
+.bitsArrow {
+  color: var(--text-quiet);
+}
+
+.bitsQuantum {
+  font-weight: 600;
+  color: var(--sev, var(--text-primary));
+}
+
+@media (max-width: 1180px) {
+  .classes {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .classCopy {
+    padding-left: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .classCount {
+    font-size: 2rem;
+    min-width: 56px;
+  }
+}
