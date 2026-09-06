@@ -46,6 +46,7 @@ export function ScanPage() {
   const [dragging, setDragging] = useState(false);
   const [startError, setStartError] = useState<unknown>(null);
   const [starting, setStarting] = useState(false);
+  const [dataShelfLifeYears, setDataShelfLifeYears] = useState(10);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const onDrop = useCallback((event: React.DragEvent) => {
@@ -67,7 +68,11 @@ export function ScanPage() {
       // Where the API service is not running this rejects with a clear reason
       // rather than simulating a scan that never happened.
       const artifact = await api.uploadArtifact(file, file.name);
-      const created = await api.createScan({ name: file.name, artifact_id: artifact.artifact_id });
+      const created = await api.createScan({
+        name: file.name,
+        artifact_id: artifact.artifact_id,
+        mosca_params: { data_shelf_life_years_x: dataShelfLifeYears },
+      });
       setScanId(created.scan_id);
       setFile(null);
     } catch (caught) {
@@ -75,7 +80,7 @@ export function ScanPage() {
     } finally {
       setStarting(false);
     }
-  }, [file, setScanId]);
+  }, [file, dataShelfLifeYears, setScanId]);
 
   return (
     <>
@@ -117,6 +122,23 @@ export function ScanPage() {
                 <span aria-hidden="true"> · </span>
                 {file.type || 'unknown type'}
               </p>
+              <label className={styles.shelfLife}>
+                <span className={styles.shelfLifeLabel}>
+                  Data shelf life (X, years)
+                  <span className={styles.shelfLifeHint}>
+                    How long this data must stay confidential — feeds the Mosca
+                    assessment (X + Y &gt; Z). Change it any time from the Mosca page.
+                  </span>
+                </span>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={dataShelfLifeYears}
+                  onChange={(event) => setDataShelfLifeYears(Number(event.target.value) || 1)}
+                  className={styles.shelfLifeInput}
+                />
+              </label>
               <div className={styles.selectionActions}>
                 <Button variant="primary" onClick={startScan} disabled={starting}>
                   {starting ? 'Starting…' : 'Start scan'}
@@ -146,11 +168,11 @@ export function ScanPage() {
 
         {API_MODE === 'mock' && (
           <p className={styles.modeNote}>
-            The QNetra API service (<span className="mono">backend/</span>) is not implemented yet,
-            so no new scan can be started from this session. Everything below — and everywhere else
-            in the application — is the result of running the real pipeline
-            (<span className="mono">scanners/</span> and <span className="mono">core/</span>) over
-            the repository sample targets.
+            This session is set to <span className="mono">VITE_API_MODE=mock</span>, so it reads a
+            pre-generated offline dataset instead of a live backend and cannot start a new scan.
+            Set <span className="mono">VITE_API_MODE=live</span> and start the API with{' '}
+            <span className="mono">uvicorn backend.main:app --reload --port 8000</span> to scan a
+            real target.
           </p>
         )}
       </Section>

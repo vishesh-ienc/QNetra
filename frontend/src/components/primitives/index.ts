@@ -16,5 +16,6 @@ export { PageHeader } from './PageHeader';
 export { Panel } from './Panel';
 export { ScoreDial } from './ScoreDial';
 export { Section } from './Section';
+export { SectionNav, type SectionNavItem } from './SectionNav';
 export { EmptyState, ErrorState, Skeleton, SkeletonBlock, SkeletonRows, Unavailable } from './States';
 export { Stat, StatRow } from './Stat';

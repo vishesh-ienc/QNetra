@@ -5,11 +5,12 @@
  * ad-hoc `fetch` calls in components.
  *
  * Two transports:
- *   live — talks to the Phase 4 FastAPI gateway at `VITE_API_BASE_URL` (default `/api/v1`).
+ *   live (default) — talks to the FastAPI gateway at `VITE_API_BASE_URL`
+ *          (default `/api/v1`, proxied by Vite to http://127.0.0.1:8000 in dev).
  *   mock — serves fixtures generated from real QNetra engine output by
- *          `frontend/tools/generate_fixtures.py`. Used because `backend/` is not
- *          implemented yet. The mock speaks the same request/response contract,
- *          so switching to live is a configuration change, not a code change.
+ *          `frontend/tools/generate_fixtures.py`. Useful for UI work with no
+ *          backend running. Speaks the identical contract as live, so switching
+ *          modes is configuration only, never a code change.
  */
 
 import type { ApiErrorBody } from './types';
@@ -18,7 +19,7 @@ export type ApiMode = 'live' | 'mock';
 
 const RAW_MODE = import.meta.env.VITE_API_MODE as string | undefined;
 
-export const API_MODE: ApiMode = RAW_MODE === 'live' ? 'live' : 'mock';
+export const API_MODE: ApiMode = RAW_MODE === 'mock' ? 'mock' : 'live';
 
 export const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? '/api/v1';

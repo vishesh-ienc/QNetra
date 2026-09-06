@@ -1,3 +1,9 @@
+.sectionNote {
+  margin-bottom: var(--sp-6);
+  font-size: var(--text-sm);
+  color: var(--text-quiet);
+}
+
 .list {
   display: flex;
   flex-direction: column;
@@ -6,19 +12,25 @@
 
 .row {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--sp-8);
+  flex-direction: column;
+  gap: var(--sp-4);
   padding: var(--sp-6);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   background: var(--surface-1);
-  flex-wrap: wrap;
   transition: border-color var(--dur-fast) var(--ease);
 }
 
 .row:hover {
   border-color: var(--border);
+}
+
+.rowMain {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-8);
+  flex-wrap: wrap;
 }
 
 .rowBody {

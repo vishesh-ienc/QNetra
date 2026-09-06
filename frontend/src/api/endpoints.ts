@@ -3,7 +3,7 @@
  * Components never build URLs themselves.
  */
 
-import { request, upload, type Query } from './client';
+import { ApiError, API_BASE_URL, API_MODE, NotImplementedByBackendError, request, upload, type Query } from './client';
 import type {
   CbomDocument,
   CryptoAsset,
@@ -52,7 +52,59 @@ export interface Artifact {
   expires_at: string | null;
 }
 
+export interface ExportedFile {
+  content: string;
+  filename: string;
+  mediaType: string;
+}
+
+/**
+ * File-download endpoints (docs/10 §10, §15) return a raw stream, not a JSON
+ * envelope, so they bypass the generic `request()` helper. Only meaningful in
+ * live mode: the mock dataset speaks the JSON contract, not the file-download
+ * contract.
+ */
+async function fetchExportedFile(path: string, notice: string): Promise<ExportedFile> {
+  if (API_MODE !== 'live') {
+    throw new NotImplementedByBackendError(notice);
+  }
+  const response = await fetch(`${API_BASE_URL}${path}`);
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new ApiError(
+      payload?.error?.code ?? 'EXPORT_FAILED',
+      payload?.error?.message ?? `Export failed with status ${response.status}.`,
+      response.status,
+    );
+  }
+  const disposition = response.headers.get('content-disposition') ?? '';
+  const match = /filename="?([^";]+)"?/.exec(disposition);
+  return {
+    content: await response.text(),
+    filename: match?.[1] ?? 'download',
+    mediaType: response.headers.get('content-type') ?? 'application/octet-stream',
+  };
+}
+
+function exportCbom(scanId: string, format: 'json' | 'xml'): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/cbom/export?format=${format}`,
+    'CBOM file export requires the live QNetra API. Set VITE_API_MODE=live and start the ' +
+      "backend, or use the CBOM view's in-browser JSON download in the meantime.",
+  );
+}
+
+/** Server-composed exports (docs/10 §15): the full envelope, the asset-inventory CSV, or PDF. */
+function exportScan(scanId: string, format: 'json' | 'csv' | 'pdf'): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/export?format=${format}`,
+    'This export requires the live QNetra API. Set VITE_API_MODE=live and start the backend.',
+  );
+}
+
 export const api = {
+  exportCbom,
+  exportScan,
   uploadArtifact: (file: File, name?: string) => {
     const form = new FormData();
     form.append('file', file);
@@ -60,8 +112,16 @@ export const api = {
     return upload<Artifact>('/artifacts/upload', form);
   },
 
-  createScan: (body: { name?: string; artifact_id: string; target_type?: string }) =>
-    request<Scan>('/scans', { method: 'POST', body }),
+  createScan: (body: {
+    name?: string;
+    artifact_id: string;
+    target_type?: string;
+    mosca_params?: {
+      data_shelf_life_years_x?: number;
+      migration_time_years_y?: number;
+      quantum_threat_horizon_years_z?: number;
+    };
+  }) => request<Scan>('/scans', { method: 'POST', body }),
 
   listScans: () => request<Paginated<Scan>>('/scans'),
 

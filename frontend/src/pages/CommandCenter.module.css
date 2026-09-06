@@ -404,3 +404,248 @@
     align-items: flex-start;
   }
 }
+
+/* --- Architecture / component breakdown ----------------------------------- */
+
+.componentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5, 20px);
+}
+
+.componentRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.componentHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.componentName {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.componentMeta {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+
+.componentCritical {
+  color: var(--sev);
+  font-weight: 600;
+}
+
+/* --- Priority actions narrative list --------------------------------------- */
+
+.priorityList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--border-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.priorityItem {
+  background: var(--surface-1);
+}
+
+.priorityButton {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  width: 100%;
+  padding: var(--sp-5, 20px) var(--sp-6);
+  text-align: left;
+  transition: background var(--dur-fast) var(--ease);
+  border-left: 3px solid var(--sev);
+}
+
+.priorityButton:hover {
+  background: var(--surface-2);
+}
+
+.priorityRank {
+  flex: none;
+  font-size: var(--text-h2);
+  font-weight: 600;
+  color: var(--sev);
+  min-width: 28px;
+}
+
+.priorityBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  min-width: 0;
+}
+
+.priorityWhat {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.priorityAlgorithm {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.priorityWhere {
+  font-size: var(--text-xs);
+}
+
+.priorityWhy {
+  max-width: var(--reading-max);
+  font-size: var(--text-sm);
+  line-height: var(--leading-relaxed);
+  color: var(--text-tertiary);
+}
+
+.priorityFooter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-top: var(--sp-1);
+  flex-wrap: wrap;
+}
+
+.priorityUrgency {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--sev);
+}
+
+.priorityAction {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+/* --- Risk section combining distribution + ranking -------------------------- */
+
+.severityBlock {
+  margin-bottom: var(--sp-10);
+}
+
+.rankingPanel {
+  margin-top: var(--sp-2);
+}
+
+/* --- Migration: immediate preview ------------------------------------------- */
+
+.immediateBlock {
+  margin-top: var(--sp-10);
+  padding-top: var(--sp-8);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.immediateList {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--sp-4);
+}
+
+.immediateRow {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.immediateRow:last-child {
+  border-bottom: none;
+}
+
+.immediateButton {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: var(--sp-3) 0;
+  text-align: left;
+  flex-wrap: wrap;
+  transition: opacity var(--dur-fast) var(--ease);
+}
+
+.immediateButton:hover {
+  opacity: 0.85;
+}
+
+.immediateCurrent {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.immediateArrow {
+  color: var(--text-quiet);
+}
+
+.immediateTarget {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* --- Assets primitive breakdown --------------------------------------------- */
+
+.primitiveList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.primitiveRow {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) 0;
+}
+
+.primitiveName {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.primitiveCount {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* --- Evidence example -------------------------------------------------------- */
+
+.evidenceExample {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 720px;
+}
+
+.evidenceIntro {
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+}
+
+.evidenceRationale {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  line-height: var(--leading-relaxed);
+}
+
+@media (max-width: 900px) {
+  .primitiveRow {
+    grid-template-columns: 140px minmax(0, 1fr) 32px;
+  }
+}

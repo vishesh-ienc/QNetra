@@ -1,0 +1,9 @@
+# QNetra Backend — API Gateway Dependencies
+#
+# Scoped separately from the root requirements.txt (discovery-layer deps).
+# The backend imports scanners/ and core/ directly; it adds no cryptographic
+# or scanning dependencies of its own — only the web-framework layer.
+
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12

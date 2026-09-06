@@ -1,13 +1,8 @@
-import { API_MODE } from '../api/client';
+import { useState } from 'react';
+import { api, type ExportedFile } from '../api/endpoints';
 import { useCbom, useMosca, useRecommendations, useRisk } from '../api/queries';
 import { formatDateTime, formatNumber } from '../lib/format';
-import {
-  Button,
-  PageHeader,
-  Section,
-  SkeletonBlock,
-  Unavailable,
-} from '../components/primitives';
+import { Button, ErrorState, PageHeader, Section, SkeletonBlock } from '../components/primitives';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
 import styles from './ReportsPage.module.css';
@@ -29,48 +24,39 @@ export function ReportsPage() {
       <PageHeader
         eyebrow="Response"
         title="Reports"
-        lede="Everything QNetra concluded, in a form you can hand to someone else. Exports carry the engines' own output — the interface does not summarise, round or reinterpret the analysis on the way out."
+        lede="Everything QNetra concluded, in a form you can hand to someone else. Every export carries the engines' own output — the interface does not summarise, round, or reinterpret the analysis on the way out."
         meta={<span>Scan completed {formatDateTime(scan.completed_at)}</span>}
       />
 
-      <Section divided={false} eyebrow="Available now" title="Client-side exports">
-        {!ready && <SkeletonBlock height={200} />}
+      <Section divided={false} eyebrow="From this session" title="Already fetched">
+        <p className={styles.sectionNote}>
+          These save the exact data already loaded from the API for this scan — no extra request.
+        </p>
+        {!ready && <SkeletonBlock height={160} />}
         {ready && (
           <div className={styles.list}>
             <ExportRow
               name="CycloneDX 1.6 CBOM (JSON)"
               copy={`The full ${formatNumber(cbom.data?.components.length ?? 0)}-component cryptographic bill of materials exactly as core.cbom_generator serialised it.`}
-              onDownload={() => download(cbom.data, `qnetra-cbom-${scanId}.json`)}
+              onDownload={() =>
+                saveJson(cbom.data, `qnetra-cbom-${scanId}.json`)
+              }
             />
             <ExportRow
               name="Risk assessment (JSON)"
               copy="Overall score, severity distribution, quantum exposure counts, and the per-asset assessment with its contributing factors."
-              onDownload={() => download(risk.data, `qnetra-risk-${scanId}.json`)}
+              onDownload={() => saveJson(risk.data, `qnetra-risk-${scanId}.json`)}
             />
             <ExportRow
               name="Mosca / HNDL assessment (JSON)"
               copy="The X, Y and Z terms per asset, the inequality outcome, urgency, HNDL exposure, and the assumptions the engine declared."
-              onDownload={() => download(mosca.data, `qnetra-mosca-${scanId}.json`)}
+              onDownload={() => saveJson(mosca.data, `qnetra-mosca-${scanId}.json`)}
             />
             <ExportRow
               name="PQC recommendations (JSON)"
               copy="Per-asset migration recommendations with rationale, guidance steps, assumptions and limitations."
               onDownload={() =>
-                download(recommendations.data, `qnetra-recommendations-${scanId}.json`)
-              }
-            />
-            <ExportRow
-              name="Asset inventory (CSV)"
-              copy="One row per asset with its classification, risk, urgency and recommended replacement — for spreadsheets and ticketing systems."
-              onDownload={() =>
-                downloadCsv(
-                  buildInventoryCsv(
-                    risk.data?.assessments ?? [],
-                    mosca.data?.assessments ?? [],
-                    recommendations.data?.recommendations ?? [],
-                  ),
-                  `qnetra-inventory-${scanId}.csv`,
-                )
+                saveJson(recommendations.data, `qnetra-recommendations-${scanId}.json`)
               }
             />
           </div>
@@ -78,51 +64,41 @@ export function ReportsPage() {
       </Section>
 
       <Section
-        eyebrow="Requires the API"
-        title="Server-side exports"
-        lede="These formats are produced by the backend from the same data. They are listed here because the contract defines them, not because they are simulated."
+        eyebrow="Server-composed"
+        title="Built fresh by the API"
+        lede="These are assembled server-side from the same scan record — a different encoding (XML), a flattened spreadsheet (CSV), or every result bundled into one document. Requires the live backend."
       >
         <div className={styles.list}>
-          <Unavailable
-            label="Executive report (PDF)"
-            reason={
-              <>
-                Defined as <span className="mono">GET /scans/{'{id}'}/export?format=pdf</span>.
-                {API_MODE === 'mock'
-                  ? ' The QNetra API service is not running in this session.'
-                  : ' This instance did not serve the endpoint.'}{' '}
-                Generating a report in the browser would produce a document the engines never
-                authored, so the interface does not do it.
-              </>
-            }
+          <ExportRow
+            name="CycloneDX 1.6 CBOM (XML)"
+            copy="The identical inventory, serialised by core.cbom_generator's XML writer instead of JSON."
+            onDownload={() => api.exportCbom(scanId, 'xml').then(saveExportedFile)}
           />
-          <Unavailable
-            label="CycloneDX 1.6 CBOM (XML)"
-            reason={
-              <>
-                Defined as{' '}
-                <span className="mono">GET /scans/{'{id}'}/cbom/export?format=xml</span>, serialised
-                by <span className="mono">core.cbom_generator</span>. The frontend will not
-                re-serialise the JSON document into XML itself.
-              </>
-            }
+          <ExportRow
+            name="Asset inventory (CSV)"
+            copy="One row per asset — classification, risk, Mosca urgency and the recommended replacement — for spreadsheets and ticketing systems."
+            onDownload={() => api.exportScan(scanId, 'csv').then(saveExportedFile)}
           />
-          <Unavailable
-            label="Complete scan envelope (JSON)"
-            reason={
-              <>
-                Defined as <span className="mono">GET /scans/{'{id}'}/export?format=json</span> —
-                findings, assets, risk, CBOM and recommendations in one document assembled
-                server-side. The individual exports above cover the same data from the endpoints
-                that are reachable.
-              </>
-            }
+          <ExportRow
+            name="Complete scan envelope (JSON)"
+            copy="Findings, assets, risk, Mosca, recommendations and CBOM in one document, assembled server-side."
+            onDownload={() => api.exportScan(scanId, 'json').then(saveExportedFile)}
+          />
+          <ExportRow
+            name="Executive report (PDF)"
+            copy="No engine in core/ produces report prose or page layout, so this is declined by the API rather than generated client-side."
+            onDownload={() => api.exportScan(scanId, 'pdf').then(saveExportedFile)}
           />
         </div>
       </Section>
     </>
   );
 }
+
+/* --- Export row: owns its own attempt/loading/error state -------------------
+   Every row follows the same shape (call an async producer, save the result,
+   or show why it failed) so failures — including the PDF route's honest
+   NOT_IMPLEMENTED — surface as real errors, not a static disclaimer. */
 
 function ExportRow({
   name,
@@ -131,22 +107,43 @@ function ExportRow({
 }: {
   name: string;
   copy: string;
-  onDownload: () => void;
+  onDownload: () => Promise<void>;
 }) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<unknown>(null);
+
+  const handleClick = async () => {
+    setPending(true);
+    setError(null);
+    try {
+      await onDownload();
+    } catch (caught) {
+      setError(caught);
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <div className={styles.row}>
-      <div className={styles.rowBody}>
-        <p className={styles.rowName}>{name}</p>
-        <p className={styles.rowCopy}>{copy}</p>
+      <div className={styles.rowMain}>
+        <div className={styles.rowBody}>
+          <p className={styles.rowName}>{name}</p>
+          <p className={styles.rowCopy}>{copy}</p>
+        </div>
+        <Button onClick={handleClick} disabled={pending}>
+          {pending ? 'Preparing…' : 'Download'}
+        </Button>
       </div>
-      <Button onClick={onDownload}>Download</Button>
+      {error !== null && <ErrorState error={error} compact />}
     </div>
   );
 }
 
-/* --- Download helpers ----------------------------------------------------- */
+/* --- Save helpers ----------------------------------------------------------- */
 
-function saveBlob(blob: Blob, filename: string): void {
+function saveBlob(content: string, filename: string, mediaType: string): void {
+  const blob = new Blob([content], { type: mediaType });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -155,89 +152,10 @@ function saveBlob(blob: Blob, filename: string): void {
   URL.revokeObjectURL(url);
 }
 
-function download(payload: unknown, filename: string): void {
-  saveBlob(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), filename);
+async function saveJson(payload: unknown, filename: string): Promise<void> {
+  saveBlob(JSON.stringify(payload, null, 2), filename, 'application/json');
 }
 
-function downloadCsv(csv: string, filename: string): void {
-  saveBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), filename);
-}
-
-function csvCell(value: unknown): string {
-  if (value === null || value === undefined) return '';
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-}
-
-/**
- * Flattens the engine outputs into one row per asset. Every column is a value an
- * engine produced; the export adds no derived column of its own.
- */
-function buildInventoryCsv(
-  risk: { asset_id: string; risk_score: number; severity: string; rationale: string }[],
-  mosca: {
-    asset_id: string;
-    urgency: string;
-    hndl_exposure: string;
-    x_plus_y: number | null;
-    z_quantum_arrival_years: number | null;
-    exposure_gap_years: number | null;
-  }[],
-  recommendations: {
-    asset_id: string;
-    current_algorithm: string;
-    current_primitive: string;
-    recommendation_type: string;
-    recommended_algorithm: string | null;
-    pqc_standard: string | null;
-    hybrid_recommendation: string | null;
-    migration_complexity: string;
-  }[],
-): string {
-  const moscaByAsset = new Map(mosca.map((entry) => [entry.asset_id, entry]));
-  const riskByAsset = new Map(risk.map((entry) => [entry.asset_id, entry]));
-
-  const header = [
-    'asset_id',
-    'algorithm',
-    'primitive_type',
-    'risk_score',
-    'risk_severity',
-    'risk_rationale',
-    'mosca_urgency',
-    'hndl_exposure',
-    'x_plus_y_years',
-    'z_years',
-    'exposure_gap_years',
-    'recommendation_type',
-    'recommended_algorithm',
-    'pqc_standard',
-    'hybrid_scheme',
-    'migration_complexity',
-  ];
-
-  const rows = recommendations.map((recommendation) => {
-    const riskEntry = riskByAsset.get(recommendation.asset_id);
-    const moscaEntry = moscaByAsset.get(recommendation.asset_id);
-    return [
-      recommendation.asset_id,
-      recommendation.current_algorithm,
-      recommendation.current_primitive,
-      riskEntry?.risk_score,
-      riskEntry?.severity,
-      riskEntry?.rationale,
-      moscaEntry?.urgency,
-      moscaEntry?.hndl_exposure,
-      moscaEntry?.x_plus_y,
-      moscaEntry?.z_quantum_arrival_years,
-      moscaEntry?.exposure_gap_years,
-      recommendation.recommendation_type,
-      recommendation.recommended_algorithm,
-      recommendation.pqc_standard,
-      recommendation.hybrid_recommendation,
-      recommendation.migration_complexity,
-    ].map(csvCell);
-  });
-
-  return [header.join(','), ...rows.map((row) => row.join(','))].join('\n');
+function saveExportedFile(file: ExportedFile): void {
+  saveBlob(file.content, file.filename, file.mediaType);
 }
