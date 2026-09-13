@@ -35,6 +35,7 @@ import {
 import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import tableStyles from './Tables.module.css';
 import styles from './QuantumPage.module.css';
 
@@ -54,7 +55,7 @@ export function QuantumPage() {
   const assets = useAssets(scanId, table.queryParams);
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="CLASSIFICATION" pageName="Quantum Exposure"><></></ScanGate>;
 
   const report = risk.data;
 
@@ -114,21 +115,19 @@ export function QuantumPage() {
             data-sev={
               asset.effective_quantum_security_bits === null &&
               asset.quantum_threat_type === 'SHOR_POLYNOMIAL_BREAK'
-                ? 'CRITICAL'
+                ? 'MEDIUM'
                 : 'UNKNOWN'
             }
             title={
               asset.effective_quantum_security_bits === null
                 ? asset.quantum_threat_type === 'SHOR_POLYNOMIAL_BREAK'
-                  ? 'Not expressible as a bit count — Shor breaks the construction outright.'
+                  ? 'Shor\u2019s algorithm breaks the construction outright \u2014 no residual bit-security applies.'
                   : 'Not estimable without the key parameters.'
                 : undefined
             }
           >
             {asset.effective_quantum_security_bits === null
-              ? asset.quantum_threat_type === 'SHOR_POLYNOMIAL_BREAK'
-                ? 'broken'
-                : 'unknown'
+              ? '\u2014'
               : formatBits(asset.effective_quantum_security_bits)}
           </span>
         </div>
@@ -176,7 +175,7 @@ export function QuantumPage() {
     <>
       <PageHeader
         eyebrow="Exposure"
-        title="Quantum"
+        title="Quantum Exposure"
         lede="What a cryptographically relevant quantum computer does to this inventory. Every asset is placed in exactly one threat class by core.classification, based on the algorithm and the parameters the scanners actually observed."
       />
 

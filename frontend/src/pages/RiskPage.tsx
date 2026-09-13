@@ -36,6 +36,7 @@ import {
 import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import tableStyles from './Tables.module.css';
 import styles from './RiskPage.module.css';
 
@@ -47,7 +48,7 @@ export function RiskPage() {
   const assets = useAssets(scanId, table.queryParams);
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="RISK_ANALYSIS" pageName="Risk"><></></ScanGate>;
 
   const report = risk.data;
 

@@ -1,5 +1,5 @@
+import { Link } from 'react-router-dom';
 import { API_MODE } from '../../api/client';
-import { formatDateTime, formatNumber } from '../../lib/format';
 import { useScanContext } from '../../state/useScanContext';
 import { Badge } from '../primitives';
 import styles from './TopBar.module.css';
@@ -14,7 +14,7 @@ const STATUS_TONE = {
 } as const;
 
 export function TopBar({ onOpenNav }: { onOpenNav: () => void }) {
-  const { scan, scans, scanId, setScanId } = useScanContext();
+  const { scan, scans } = useScanContext();
 
   return (
     <header className={styles.bar}>
@@ -24,58 +24,43 @@ export function TopBar({ onOpenNav }: { onOpenNav: () => void }) {
         onClick={onOpenNav}
         aria-label="Open navigation"
       >
-        ☰
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true">
+          <rect x="2" y="5" width="16" height="1.5" rx="0.75" fill="currentColor" />
+          <rect x="2" y="9.25" width="16" height="1.5" rx="0.75" fill="currentColor" />
+          <rect x="2" y="13.5" width="10" height="1.5" rx="0.75" fill="currentColor" />
+        </svg>
       </button>
 
       <div className={styles.context}>
         {scan ? (
-          <>
-            {scans.length > 1 ? (
-              <label className={styles.scanSelect}>
-                <span className="visually-hidden">Active scan</span>
-                <select
-                  value={scanId ?? ''}
-                  onChange={(event) => setScanId(event.target.value)}
-                >
-                  {scans.map((option) => (
-                    <option key={option.scan_id} value={option.scan_id}>
-                      {option.name ?? option.target.name ?? option.scan_id}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            ) : (
-              <p className={styles.scanName}>{scan.name ?? scan.target.name ?? 'Scan'}</p>
-            )}
-            <span className={`${styles.target} mono`} title={scan.target.path}>
-              {scan.target.path}
+          <div className={styles.scanContext}>
+            <span className={styles.activeLabel}>Active</span>
+            <span className={styles.scanName} title={scan.target.path || scan.name || scan.scan_id}>
+              {scan.name ?? scan.target.name ?? scan.scan_id.slice(0, 12)}
             </span>
-            <Badge tone={STATUS_TONE[scan.status] ?? 'UNKNOWN'} variant="dot">
+            <Badge tone={STATUS_TONE[scan.status] ?? 'UNKNOWN'} variant="dot" size="sm">
               {scan.status.toLowerCase()}
             </Badge>
-          </>
+            <Link
+              to="/history"
+              className={styles.historyLink}
+              title="View all scans in session history"
+            >
+              History{scans.length > 1 ? ` (${scans.length})` : ''}
+            </Link>
+          </div>
         ) : (
-          <p className={styles.scanName}>No scan selected</p>
+          <Link to="/scan" className={styles.ctaLink}>
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M5 8h6M8 5v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            Start a scan
+          </Link>
         )}
       </div>
 
       <div className={styles.meta}>
-        {scan && (
-          <>
-            <span className={styles.metaItem}>
-              <span className="numeric">{formatNumber(scan.progress.raw_findings_count)}</span>{' '}
-              findings
-            </span>
-            <span className={styles.metaDivider} aria-hidden="true" />
-            <span className={styles.metaItem}>
-              <span className="numeric">{formatNumber(scan.progress.assets_count)}</span> assets
-            </span>
-            <span className={styles.metaDivider} aria-hidden="true" />
-            <span className={styles.metaItem} title={`Completed ${formatDateTime(scan.completed_at)}`}>
-              {formatDateTime(scan.completed_at)}
-            </span>
-          </>
-        )}
         {API_MODE === 'mock' && (
           <span
             className={styles.sourceChip}

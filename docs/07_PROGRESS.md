@@ -16,7 +16,9 @@
 
 ## Current Focus
 
-Phase 3 complete. All three intelligence engines implemented. Transitioning to Phase 4: FastAPI Backend & Web Dashboard.
+Phase 3 complete. All three intelligence engines implemented and tested. Phase 4 FastAPI Backend and Interactive Web Dashboard is substantially complete.
+
+Current focus: static audit and UX polish.
 
 ---
 
@@ -146,8 +148,17 @@ Phase 3 complete. All three intelligence engines implemented. Transitioning to P
 * **Milestone 3.1 (Complete):** Deterministic Cryptographic Risk Engine (`core.risk_engine`) — 41 new tests, 313 total, 98% coverage.
 * **Milestone 3.2 (Complete):** Michele Mosca Migration Timeline Engine (`core.mosca_engine`) — 95 new tests, 408 total, 97% coverage.
 * **Milestone 3.3 (Complete ✅):** NIST PQC & Hybrid Recommendation Engine (`core.recommendation_engine`) with Classical Upgrade Terminology Disambiguation — 118 tests, 526 total, 93% coverage.
-* **Milestone 4:** Full-stack integration with FastAPI backend and interactive web dashboard.
-* **Milestone 5:** End-to-end testing, audit report generation (PDF/CSV), and presentation polish.
+* **Milestone 4 (Substantially Complete):** FastAPI Backend + Interactive React Dashboard
+  * Full-stack QNetra platform with 10+ analysis pages
+  * Scan upload/creation pipeline, polling, scan history
+  * Result availability states (ScanGate, NO_SCAN/SCANNING/AVAILABLE/FAILED) across all pages
+  * Information architecture cleanup (nav, page titles, eyebrows)
+  * Cryptographic Posture executive summary (CommandCenter)
+  * PQC Migration Plan, Risk, Quantum Exposure, Mosca/HNDL, CBOM, Evidence, Crypto Assets pages
+  * Reports & Exports center with JSON/CSV/XML/full-envelope downloads
+  * Scan History page with historical scan restoration
+  * Static audit: all nav/heading labels consistent, all state guards verified
+* **Milestone 5:** End-to-end testing, PDF report generation, presentation polish.
 
 ---
 
@@ -163,12 +174,15 @@ Phase 3 complete. All three intelligence engines implemented. Transitioning to P
 | 2026-09-03T23:33:00 | AI Agent | Implemented Phase 2 Milestone 2.2: Classification Engine, normalization bug fix, schema extension, 54 new tests (153 total, 85% core coverage) | `core/classification/*`, `core/models.py`, `core/normalization/algorithm_normalizer.py`, `tests/test_core/*`, `docs/*`, `current_prompt_update.md` |
 | 2026-09-03T22:55:00 | AI Agent | Implemented Phase 2 Normalization & CryptoAsset generation (models, normalizer, deduplicator, confidence aggregator, 19 tests, 82% coverage) | `core/*`, `tests/test_core/*`, `docs/*`, `current_status.md`, `current_prompt_update.md` |
 | 2026-09-03T22:45:00 | AI Agent | Established current_prompt_update.md and codified RULE-012 in PROJECT_RULES.md & AGENTS.md | `current_prompt_update.md`, `PROJECT_RULES.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
-| 2026-09-02T10:21:00 | AI Agent | Phase 1 manual validation: created container/binary fixtures, demo script, and generated raw_findings.md (289 real findings) | `samples/container_sample/*`, `samples/binary_samples/*`, `scripts/*`, `raw_findings.md`, `current_status.md`, `docs/07_PROGRESS.md` |
+| 2026-09-14T00:37:00 | AI Agent | Static audit pass (Checkpoint 13): verified state-gate coverage on all 9 result pages; fixed QuantumPage title inconsistency ("Quantum" → "Quantum Exposure"); updated current_prompt_update.md | `frontend/src/pages/QuantumPage.tsx`, `current_prompt_update.md` |
+| 2026-09-14T00:00:00 | AI Agent | IA cleanup (Checkpoint 12): standardized nav labels, CommandCenter executive summary redesign, FindingsPage/MigrationPage/ReportsPage title updates | `frontend/src/components/layout/nav.ts`, `frontend/src/pages/CommandCenter.tsx`, `frontend/src/pages/FindingsPage.tsx`, `frontend/src/pages/MigrationPage.tsx`, `frontend/src/pages/ReportsPage.tsx` |
+| 2026-09-13T00:00:00 | AI Agent | Implemented Phase 4 frontend: ScanPage redesign with drop zone + informational guide, ScanGate result availability states, ScanHistory page, react-query polling | `frontend/src/pages/ScanPage.tsx`, `frontend/src/pages/ScanHistoryPage.tsx`, `frontend/src/pages/shared/ScanGate.tsx` |
+| 2026-09-04T17:25:00 | AI Agent | Phase 3.3 Corrective Pass: Introduced `CLASSICAL_UPGRADE` recommendation type | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py` |
 | 2026-09-01T14:57:00 | AI Agent | Created current_status.md living status tracker and registered it in AGENTS.md + PROJECT_CONTEXT.md | `current_status.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
 | 2026-08-29T18:25:00 | AI Agent | Implemented Discovery Layer foundation, Repository Scanner, Container Scanner, Binary Scanner, Registries, and 77-test suite | `scanners/*`, `samples/*`, `tests/*`, `docs/*` |
 | 2026-08-29T16:10:00 | System Init | Created repository structure, all core documentation files, rules, and data contracts | `README.md`, `AGENTS.md`, `PROJECT_RULES.md`, `docs/*` |
 
 ---
 
-**Last Updated:** 2026-09-04T15:17:00+05:30
+**Last Updated:** 2026-09-14T00:37:00+05:30
 

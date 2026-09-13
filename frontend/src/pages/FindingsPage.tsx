@@ -25,7 +25,19 @@ import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { FindingDrawer } from '../features/finding/FindingDrawer';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import styles from './Tables.module.css';
+
+/** Maps internal scanner module names to human-readable labels. */
+const SCANNER_LABELS: Record<string, string> = {
+  ast_scanner: 'AST Scanner',
+  regex_scanner: 'Pattern Matcher',
+  binary_scanner: 'Binary Analyzer',
+  config_scanner: 'Config Scanner',
+  cbom_scanner: 'CBOM Scanner',
+  dependency_scanner: 'Dependency Analyzer',
+};
+
 
 export function FindingsPage() {
   const { scanId, scan, hasResults } = useScanContext();
@@ -35,7 +47,7 @@ export function FindingsPage() {
   const findings = useFindings(scanId, table.queryParams);
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="DISCOVERY" pageName="Evidence"><></></ScanGate>;
 
   const discovery = scan.discovery;
 
@@ -72,10 +84,9 @@ export function FindingsPage() {
     {
       key: 'method',
       header: 'Method',
+      priority: 'lg',
       render: (finding) => (
-        <Badge tone="ACCENT" variant="outline" size="sm">
-          {discoveryMethodLabel[finding.discovery_method] ?? finding.discovery_method}
-        </Badge>
+        <span>{discoveryMethodLabel[finding.discovery_method] ?? finding.discovery_method}</span>
       ),
     },
     {
@@ -83,13 +94,13 @@ export function FindingsPage() {
       header: 'Scanner',
       priority: 'xl',
       render: (finding) => (
-        <span className={`${styles.muted} mono`}>
-          {finding.scanner_name.split('/').pop() ?? finding.scanner_name}
+        <span className={styles.scannerBadge}>
+          {SCANNER_LABELS[finding.scanner_name] ?? finding.scanner_name}
         </span>
       ),
     },
     {
-      key: 'confidence',
+      key: 'confidence_score',
       header: 'Confidence',
       sortKey: 'confidence_score',
       align: 'right',
@@ -105,16 +116,19 @@ export function FindingsPage() {
   return (
     <>
       <PageHeader
-        eyebrow="Evidence"
-        title="Findings"
-        lede="Raw scanner output, before normalization. Each row is a single observation at a single location — the primary evidence behind every conclusion QNetra draws. Findings are not assets: several findings usually describe the same asset."
+        eyebrow="Inventory"
+        title="Evidence"
+        lede="Raw scanner evidence recorded before normalization into canonical cryptographic assets. Each row is a single observation at a single location — multiple findings typically describe the same asset."
         meta={
           <>
             <span>
               <strong className="numeric">{formatNumber(scan.progress.raw_findings_count)}</strong>{' '}
-              findings across{' '}
-              <strong className="numeric">{formatNumber(scan.progress.files_scanned)}</strong>{' '}
-              scanned files
+              raw findings
+            </span>
+            <span aria-hidden="true">→</span>
+            <span>
+              <strong className="numeric">{formatNumber(scan.progress.assets_count)}</strong>{' '}
+              canonical assets via deduplication
             </span>
           </>
         }

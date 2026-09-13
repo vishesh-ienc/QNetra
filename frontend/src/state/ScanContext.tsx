@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../api/endpoints';
 import { queryKeys } from '../api/queries';
 import { ScanContext, type ScanContextValue } from './scanContext';
@@ -15,11 +15,22 @@ const readStored = (): string | null => {
 };
 
 export function ScanProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [selectedScanId, setSelectedScanId] = useState<string | null>(readStored);
 
   const scansQuery = useQuery({
     queryKey: queryKeys.scans,
     queryFn: () => api.listScans(),
+    // Only poll when a scan is selected so the list stays fresh during active scans.
+    refetchInterval: (query) => {
+      const data = query.state.data;
+      if (!data) return false;
+      // Check if any scan in the list is currently running.
+      const anyRunning = (data as { data?: { status: string }[] }).data?.some(
+        (s) => s.status === 'RUNNING' || s.status === 'QUEUED',
+      );
+      return anyRunning ? 5000 : false;
+    },
   });
 
   const scans = useMemo(() => scansQuery.data?.data ?? [], [scansQuery.data]);
@@ -30,18 +41,27 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     if (selectedScanId && scans.some((entry) => entry.scan_id === selectedScanId)) {
       return selectedScanId;
     }
+    // If the selected ID is not in scans yet (e.g. just created), trust the
+    // selection anyway so the scan query fires immediately before the list
+    // has refreshed.
+    if (selectedScanId) return selectedScanId;
     return scans[0]?.scan_id ?? null;
   }, [selectedScanId, scans]);
 
-  const setScanId = useCallback((id: string | null) => {
-    setSelectedScanId(id);
-    try {
-      if (id) window.localStorage.setItem(STORAGE_KEY, id);
-      else window.localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      /* storage unavailable — selection stays in memory for this session */
-    }
-  }, []);
+  const setScanId = useCallback(
+    (id: string | null) => {
+      setSelectedScanId(id);
+      try {
+        if (id) window.localStorage.setItem(STORAGE_KEY, id);
+        else window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* storage unavailable — selection stays in memory for this session */
+      }
+      // Invalidate the scans list so it refetches and includes the new scan.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.scans });
+    },
+    [queryClient],
+  );
 
   const scanQuery = useQuery({
     queryKey: queryKeys.scan(scanId ?? ''),

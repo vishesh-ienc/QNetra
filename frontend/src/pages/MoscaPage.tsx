@@ -35,6 +35,7 @@ import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useAssetIndex } from '../features/asset/useAssetIndex';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import tableStyles from './Tables.module.css';
 import styles from './MoscaPage.module.css';
 
@@ -168,18 +169,20 @@ export function MoscaPage() {
   );
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="MOSCA_ANALYSIS" pageName="Mosca / HNDL"><></></ScanGate>;
 
   return (
-    <>
+    <ScanGate requiredStage="MOSCA_ANALYSIS" pageName="Mosca / HNDL">
+      <>
       <PageHeader
-        eyebrow="Timing"
-        title="Mosca assessment"
+        eyebrow="Mosca / HNDL"
+        title="Migration urgency assessment"
         lede={
           <>
-            Mosca&rsquo;s inequality asks one question: will the data you are protecting today still
-            need protecting when a quantum computer can break the cryptography protecting it? If{' '}
-            <span className="mono">X + Y &gt; Z</span>, you are already late.
+            Will the organisation finish migrating before the quantum threat arrives? Mosca&rsquo;s
+            inequality formalises this question as{' '}
+            <span className="mono">X + Y &gt; Z</span>: if the sum of data shelf life (X) and
+            migration time (Y) exceeds the quantum horizon (Z), migration is already overdue.
           </>
         }
       />
@@ -259,6 +262,12 @@ export function MoscaPage() {
         lede="Y differs per asset, so the inequality is evaluated per asset rather than once for the whole target."
       >
         {mosca.isLoading && !report && <SkeletonBlock height={220} />}
+        {mosca.isFetching && report && (
+          <p className={styles.refetchingNote}>
+            <span className={styles.refetchingDot} aria-hidden="true" />
+            Recalculating with new parameters…
+          </p>
+        )}
         {report && (
           <div className={styles.verdict}>
             <div className={styles.verdictHeadline}>
@@ -383,7 +392,8 @@ export function MoscaPage() {
         moscaX={x}
         moscaZ={z}
       />
-    </>
+      </>
+    </ScanGate>
   );
 }
 

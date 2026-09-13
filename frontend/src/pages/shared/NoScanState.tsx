@@ -46,17 +46,20 @@ export function NoScanState({ scanRunning = false }: { scanRunning?: boolean }) 
           }
         />
         <EmptyState
-          title={failed ? `Scan status: ${scan.status}` : `Currently at: ${scan.current_stage}`}
+          title={failed ? `Scan status: ${scan.status}` : `Currently at: ${scan.current_stage ?? 'queued'}`}
           description={
             failed
-              ? 'Open the scan view for the recorded errors and warnings.'
+              ? scan.errors.length > 0
+                ? scan.errors.slice(0, 3).join(' · ')
+                : 'Open the scan view for the recorded errors and warnings.'
               : 'Analysis results become available once the pipeline reaches COMPLETED. Nothing is estimated in the meantime.'
           }
-          action={<Link to="/scan">Go to the scan view →</Link>}
+          action={<Link to="/scan">View scan pipeline →</Link>}
         />
       </>
     );
   }
+
 
   return (
     <>
@@ -70,9 +73,9 @@ export function NoScanState({ scanRunning = false }: { scanRunning?: boolean }) 
         description={
           API_MODE === 'mock'
             ? 'The QNetra API service is not running, so no scans could be listed.'
-            : 'No scans have been created for this instance.'
+            : 'No scans have been created for this instance. Upload an artifact to begin.'
         }
-        action={<Link to="/scan">Open the scan view →</Link>}
+        action={<Link to="/scan">Start a scan →</Link>}
       />
     </>
   );

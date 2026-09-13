@@ -38,6 +38,7 @@ ENV/
 .coverage.*
 htmlcov/
 *.cover
+coverage.json
 
 # IDEs and Editors
 .vscode/
@@ -51,6 +52,8 @@ Thumbs.db
 # QNetra local runtime caches
 .cache/
 *.log
+scan_body.json
+samples/*.zip
 
 # Frontend build output
 frontend/dist/

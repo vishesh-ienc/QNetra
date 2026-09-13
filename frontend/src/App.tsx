@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
 import { CommandCenter } from './pages/CommandCenter';
 import { ScanPage } from './pages/ScanPage';
+import { ScanHistoryPage } from './pages/ScanHistoryPage';
 import { AssetsPage } from './pages/AssetsPage';
 import { FindingsPage } from './pages/FindingsPage';
 import { CbomPage } from './pages/CbomPage';
@@ -17,6 +18,7 @@ export function App() {
       <Route element={<AppShell />}>
         <Route index element={<CommandCenter />} />
         <Route path="scan" element={<ScanPage />} />
+        <Route path="history" element={<ScanHistoryPage />} />
         <Route path="assets" element={<AssetsPage />} />
         <Route path="findings" element={<FindingsPage />} />
         <Route path="cbom" element={<CbomPage />} />

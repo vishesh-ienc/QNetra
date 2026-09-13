@@ -5,6 +5,7 @@ import { formatDateTime, formatNumber } from '../lib/format';
 import { Button, ErrorState, PageHeader, Section, SkeletonBlock } from '../components/primitives';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import styles from './ReportsPage.module.css';
 
 export function ReportsPage() {
@@ -15,15 +16,16 @@ export function ReportsPage() {
   const cbom = useCbom(scanId);
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="COMPLETED" pageName="Reports & Exports"><></></ScanGate>;
 
   const ready = Boolean(risk.data && mosca.data && recommendations.data && cbom.data);
 
   return (
-    <>
+    <ScanGate requiredStage="COMPLETED" pageName="Reports & Exports">
+      <>
       <PageHeader
         eyebrow="Response"
-        title="Reports"
+        title="Reports &amp; exports"
         lede="Everything QNetra concluded, in a form you can hand to someone else. Every export carries the engines' own output — the interface does not summarise, round, or reinterpret the analysis on the way out."
         meta={<span>Scan completed {formatDateTime(scan.completed_at)}</span>}
       />
@@ -91,7 +93,8 @@ export function ReportsPage() {
           />
         </div>
       </Section>
-    </>
+      </>
+    </ScanGate>
   );
 }
 

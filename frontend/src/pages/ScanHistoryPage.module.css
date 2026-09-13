@@ -1,0 +1,347 @@
+/* ==========================================================================
+   Scan History Page
+   ========================================================================== */
+
+@keyframes historyFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Persistence notice                                                         */
+/* -------------------------------------------------------------------------- */
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  border-radius: var(--radius-lg);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: var(--sp-8);
+}
+
+.noticeIcon {
+  flex: none;
+  font-size: var(--text-sm);
+  color: var(--text-quiet);
+  margin-top: 2px;
+}
+
+.noticeText {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Loading / empty                                                            */
+/* -------------------------------------------------------------------------- */
+
+.loading {
+  padding: var(--sp-12) 0;
+  font-size: var(--text-sm);
+  color: var(--text-quiet);
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-12) var(--sp-8);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--bg-sunken);
+  animation: historyFadeIn var(--dur-slow) var(--ease);
+}
+
+.emptyTitle {
+  font-size: var(--text-h3);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.emptyDesc {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+  max-width: 52ch;
+}
+
+.emptyAction {
+  margin-top: var(--sp-2);
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-quiet);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  transition: background var(--dur-fast) var(--ease);
+}
+
+.emptyAction:hover {
+  background: var(--accent-wash-strong);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scan list                                                                  */
+/* -------------------------------------------------------------------------- */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Scan row                                                                   */
+/* -------------------------------------------------------------------------- */
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  padding: var(--sp-5) var(--sp-6);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  transition: border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease);
+  animation: historyFadeIn var(--dur-slow) var(--ease) both;
+  overflow: hidden;
+}
+
+.row:hover {
+  border-color: var(--border);
+  background: var(--surface-2);
+}
+
+.rowActive {
+  border-color: var(--accent-quiet);
+  background: var(--accent-wash);
+}
+
+.rowActive:hover {
+  border-color: var(--accent);
+  background: var(--accent-wash-strong);
+}
+
+.rowFailed {
+  border-color: var(--critical-border);
+  opacity: 0.8;
+}
+
+/* Active strip on left edge */
+.activeStrip {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row — main content                                                         */
+/* -------------------------------------------------------------------------- */
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+/* Identity */
+.rowIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+}
+
+.rowTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.rowName {
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.activePill {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #fff;
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.rowId {
+  font-size: var(--text-xs);
+  color: var(--text-quiet);
+}
+
+/* Status row */
+.rowStatus {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.rowTime {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.rowDuration {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.rowDurationLive {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  color: var(--accent);
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: livePulse 1.6s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+/* Metrics */
+.rowMetrics {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+  flex-wrap: wrap;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 60px;
+}
+
+.metricLabel {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.metricValue {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.metricDimmed {
+  color: var(--text-quiet);
+  font-weight: 400;
+}
+
+/* Error / warning text */
+.rowError {
+  font-size: var(--text-xs);
+  color: var(--critical);
+  line-height: var(--leading-relaxed);
+}
+
+.rowWarning {
+  font-size: var(--text-xs);
+  color: var(--warning);
+  line-height: var(--leading-relaxed);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Row — action                                                               */
+/* -------------------------------------------------------------------------- */
+
+.rowAction {
+  flex: none;
+}
+
+.openBtn {
+  padding: 7px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.openBtn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+}
+
+.openBtnActive {
+  border-color: var(--accent);
+  background: var(--accent-wash);
+  color: var(--accent);
+  cursor: default;
+}
+
+.openBtnActive:hover {
+  background: var(--accent-wash);
+  border-color: var(--accent);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Responsive                                                                 */
+/* -------------------------------------------------------------------------- */
+
+@media (max-width: 720px) {
+  .row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-4);
+  }
+
+  .rowAction {
+    width: 100%;
+  }
+
+  .openBtn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .rowMetrics {
+    gap: var(--sp-4);
+  }
+}

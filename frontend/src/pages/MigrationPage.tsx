@@ -33,6 +33,7 @@ import {
 import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import tableStyles from './Tables.module.css';
 import styles from './MigrationPage.module.css';
 
@@ -188,16 +189,17 @@ export function MigrationPage() {
   ];
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="PQC_ANALYSIS" pageName="PQC Migration Plan"><></></ScanGate>;
 
   const report = recommendations.data;
   const isLoading = assets.isLoading || recommendations.isLoading || mosca.isLoading;
 
   return (
-    <>
+    <ScanGate requiredStage="PQC_ANALYSIS" pageName="PQC Migration Plan">
+      <>
       <PageHeader
         eyebrow="Response"
-        title="PQC migration"
+        title="PQC migration plan"
         lede="Every discovered asset with the change it needs, grouped by how soon the Mosca engine says it needs it. Replacements come from core.recommendation_engine against the NIST post-quantum standards — QNetra does not choose algorithms in the interface."
       />
 
@@ -328,6 +330,7 @@ export function MigrationPage() {
       </Section>
 
       <AssetDrawer scanId={scanId} assetId={openAssetId} onClose={() => setOpenAssetId(null)} />
-    </>
+      </>
+    </ScanGate>
   );
 }

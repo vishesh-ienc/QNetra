@@ -32,6 +32,7 @@ import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useAssetIndex } from '../features/asset/useAssetIndex';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import styles from './Tables.module.css';
 
 const QUANTUM_FILTERS = [
@@ -55,7 +56,7 @@ export function AssetsPage() {
   const { recommendationByAsset } = useAssetIndex(scanId);
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="NORMALIZATION" pageName="Crypto Assets"><></></ScanGate>;
 
   const stats = scan.normalization;
 
@@ -177,7 +178,8 @@ export function AssetsPage() {
   ];
 
   return (
-    <>
+    <ScanGate requiredStage="NORMALIZATION" pageName="Crypto Assets">
+      <>
       <PageHeader
         eyebrow="Inventory"
         title="Crypto assets"
@@ -297,6 +299,7 @@ export function AssetsPage() {
       </Section>
 
       <AssetDrawer scanId={scanId} assetId={openAssetId} onClose={() => setOpenAssetId(null)} />
-    </>
+      </>
+    </ScanGate>
   );
 }

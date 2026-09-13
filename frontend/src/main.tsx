@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { API_MODE } from './api/client';
-import { ScanProvider } from './state/ScanContext';
+import { ScanProvider } from './state/ScanContext.tsx';
 import { App } from './App';
 import './styles/base.css';
 

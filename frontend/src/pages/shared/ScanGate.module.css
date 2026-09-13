@@ -1,0 +1,214 @@
+/* ==========================================================================
+   ScanGate — result availability waiting state
+   ========================================================================== */
+
+@keyframes gateFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.gate {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-8);
+  padding: var(--sp-12) 0 var(--sp-16);
+  animation: gateFadeIn var(--dur-slow) var(--ease) both;
+}
+
+/* ─── Icon ────────────────────────────────────────────────────────────────── */
+
+.gateIcon {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: var(--sp-1);
+  border: 1.5px solid var(--border);
+  color: var(--text-quiet);
+  background: var(--surface-1);
+  transition: border-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+}
+
+.gateIcon[data-tone='active'] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+  animation: gateIconPulse 1.8s ease-in-out infinite;
+}
+
+.gateIcon[data-tone='failed'] {
+  border-color: var(--critical-border);
+  color: var(--critical);
+  background: var(--critical-wash);
+}
+
+@keyframes gateIconPulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.6; }
+}
+
+/* ─── Body ────────────────────────────────────────────────────────────────── */
+
+.gateBody {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+  max-width: 640px;
+}
+
+.gateEyebrow {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.gateTitle {
+  font-size: var(--text-h1);
+  font-weight: 700;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.gateDescription {
+  font-size: var(--text-body);
+  line-height: var(--leading-relaxed);
+  color: var(--text-secondary);
+  max-width: 56ch;
+}
+
+.gateCode {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--critical);
+}
+
+/* ─── Current stage block ─────────────────────────────────────────────────── */
+
+.gateCurrent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  padding: var(--sp-4) var(--sp-5);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--surface-1);
+  margin-top: var(--sp-2);
+}
+
+.gateCurrentLabel {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.gateCurrentStage {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: var(--text-body);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.gateCurrentPulse {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: gateIconPulse 1.6s ease-in-out infinite;
+}
+
+.gateCurrentActivity {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
+}
+
+/* ─── Meta row ────────────────────────────────────────────────────────────── */
+
+.gateMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-6);
+  margin-top: var(--sp-2);
+  padding: var(--sp-5) var(--sp-6);
+  border-radius: var(--radius-xl);
+  background: var(--surface-1);
+  border: 1px solid var(--border-subtle);
+}
+
+.gateMetaItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-1);
+  min-width: 100px;
+}
+
+.gateMetaLabel {
+  font-size: var(--text-micro);
+  font-weight: 700;
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--text-quiet);
+}
+
+.gateMetaValue {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ─── Actions ─────────────────────────────────────────────────────────────── */
+
+.gateActions {
+  display: flex;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+  margin-top: var(--sp-2);
+}
+
+.gateLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--accent);
+  transition: color var(--dur-fast) var(--ease);
+}
+
+.gateLink:hover {
+  color: var(--accent-hover);
+}
+
+/* ─── Responsive ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 700px) {
+  .gate {
+    flex-direction: column;
+    gap: var(--sp-5);
+    padding: var(--sp-8) 0;
+  }
+
+  .gateIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .gateMeta {
+    gap: var(--sp-4);
+  }
+}

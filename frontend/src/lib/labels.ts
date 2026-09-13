@@ -307,3 +307,40 @@ export const stageQuestion: Record<string, string> = {
   MOSCA_ANALYSIS: 'How urgent is migration given the data being protected?',
   PQC_ANALYSIS: 'What should each vulnerable asset be replaced with?',
 };
+
+/**
+ * Human-readable activity descriptions shown below the active pipeline stage
+ * during a live scan. These accurately describe what each engine does — they
+ * must not be altered to imply capabilities the backend does not have.
+ */
+export const stageActivity: Record<string, string> = {
+  QUEUED:        'Waiting for the pipeline to start.',
+  DISCOVERY:     'Searching source files, binaries, packages and configuration for cryptographic usage.',
+  NORMALIZATION: 'Combining scanner findings into canonical cryptographic assets.',
+  CLASSIFICATION:'Evaluating algorithm strength, quantum vulnerability and security parameters.',
+  RISK_ANALYSIS: 'Evaluating algorithm strength, parameters and application criticality.',
+  MOSCA_ANALYSIS:'Evaluating exposure to harvest-now-decrypt-later attacks using the Mosca inequality.',
+  PQC_ANALYSIS:  'Mapping vulnerable cryptographic assets to appropriate post-quantum migration strategies.',
+  CBOM:          'Building a structured cryptographic inventory with evidence traceability.',
+  COMPLETED:     'All pipeline stages complete.',
+};
+
+/**
+ * Returns a short outcome string for a completed pipeline stage, derived
+ * strictly from real backend progress counters. Returns null when no
+ * meaningful outcome is available for that stage.
+ */
+export function stageOutcomeSummary(
+  stageName: string,
+  progress: { raw_findings_count?: number | null; assets_count?: number | null },
+): string | null {
+  if (stageName === 'DISCOVERY') {
+    const n = progress.raw_findings_count;
+    if (n != null && n > 0) return `${n.toLocaleString('en-US')} findings discovered`;
+  }
+  if (stageName === 'NORMALIZATION' || stageName === 'CLASSIFICATION') {
+    const n = progress.assets_count;
+    if (n != null && n > 0) return `${n.toLocaleString('en-US')} assets identified`;
+  }
+  return null;
+}

@@ -30,6 +30,7 @@ import {
 } from '../components/primitives';
 import { useScanContext } from '../state/useScanContext';
 import { NoScanState } from './shared/NoScanState';
+import { ScanGate } from './shared/ScanGate';
 import tableStyles from './Tables.module.css';
 import styles from './CbomPage.module.css';
 
@@ -100,7 +101,7 @@ export function CbomPage() {
   );
 
   if (!scanId || !scan) return <NoScanState />;
-  if (!hasResults) return <NoScanState scanRunning />;
+  if (!hasResults) return <ScanGate requiredStage="CBOM" pageName="CBOM"><></></ScanGate>;
 
   const downloadXml = async () => {
     setExportingXml(true);
@@ -205,11 +206,12 @@ export function CbomPage() {
   ];
 
   return (
-    <>
+    <ScanGate requiredStage="CBOM" pageName="CBOM">
+      <>
       <PageHeader
-        eyebrow="Inventory"
-        title="CBOM"
-        lede="The Cryptographic Bill of Materials, serialised by core.cbom_generator to the CycloneDX 1.6 cryptography extension. This is the artifact you hand to an auditor, a customer, or another tool — it is not a QNetra-specific format."
+        eyebrow="CBOM"
+        title="Cryptographic Bill of Materials"
+        lede="A structured inventory of every cryptographic component discovered during this scan, in CycloneDX 1.6 format. This is the artifact you hand to an auditor, a customer, or another tool — it is not a QNetra-specific format."
         meta={
           document && (
             <>
@@ -217,7 +219,7 @@ export function CbomPage() {
                 {document.bomFormat} {document.specVersion}
               </span>
               <span aria-hidden="true">·</span>
-              <span className="mono">{document.serialNumber}</span>
+              <span>{formatNumber(summary.total)} components</span>
               {typeof document.metadata?.timestamp === 'string' && (
                 <>
                   <span aria-hidden="true">·</span>
@@ -455,7 +457,8 @@ export function CbomPage() {
           </>
         )}
       </Drawer>
-    </>
+      </>
+    </ScanGate>
   );
 }
 
