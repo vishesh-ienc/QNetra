@@ -1,7 +1,7 @@
 # QNetra — Project Status & Implementation Summary
 
-> **Current As Of:** September 4, 2026
-> **Status:** 🟢 **Active / Phase 1, 2 & 3 Complete (Milestones 3.1, 3.2, 3.3 + Corrective Pass) — 526/527 Tests Passing**
+> **Current As Of:** September 15, 2026
+> **Status:** 🟢 **Active / Phase 1, 2, 3 & 4 (Backend + Frontend + Public GitHub Scanning) — 565/566 Tests Passing**
 > **Tracking Protocol:** This document is the comprehensive single-file status report for **QNetra**, maintained and updated on every meaningful progress milestone, architectural decision, and codebase update.
 
 ---
@@ -11,7 +11,7 @@
 * **Project Name:** QNetra
 * **SIH Problem Statement ID:** 26164
 * **Problem Statement Title:** Enterprise Cryptographic Discovery & Analysis Tool (ECDAT)
-* **Core Objective:** Build a passive, automated, enterprise-grade cryptographic discovery and risk analysis tool that identifies cryptographic assets across code repositories, container filesystems, and compiled binaries, generates a standardized Cryptographic Bill of Materials (CBOM), assesses quantum computing vulnerabilities (Shor's and Grover's algorithms), models migration urgency via Mosca's Theorem ($X + Y > Z$), and provides actionable Post-Quantum Cryptography (PQC) and hybrid transition roadmaps.
+* **Core Objective:** Build a passive, automated, enterprise-grade cryptographic discovery and risk analysis tool that identifies cryptographic assets across code repositories, container filesystems, compiled binaries, and public GitHub repositories, generates a standardized Cryptographic Bill of Materials (CBOM), assesses quantum computing vulnerabilities (Shor's and Grover's algorithms), models migration urgency via Mosca's Theorem ($X + Y > Z$), and provides actionable Post-Quantum Cryptography (PQC) and hybrid transition roadmaps.
 * **Core Architectural Principle:** **Living Single Source of Truth** with strict layer separation: Scanners emit raw evidence (`RawFinding` v1.1.0) into a Canonical Normalization Layer (`CryptoAsset`), decoupling low-level discovery from downstream CBOM generation, risk scoring, and UI presentation.
 
 ---
@@ -20,13 +20,13 @@
 
 | Dimension | Current Status | Notes / Highlights |
 | :--- | :--- | :--- |
-| **Current Phase** | **Phase 3 Complete** (Milestones 3.1, 3.2, 3.3 + Corrective Pass) | Normalization, Classification, CBOM, Risk Engine, Mosca Engine, and Recommendation Engine complete |
-| **Test Suite Health** | 🟢 **526 / 527 Tests Passing (1 skipped, 100% active pass rate)** | Run via `pytest` (0 regressions, ~1.4s execution) |
-| **Codebase Coverage** | 🟢 **93% Rec Engine, 97% Mosca, 98% Risk, 92% CBOM** | High coverage across all core analytics engines |
+| **Current Phase** | **Phase 4 Substantially Complete + GitHub Scans** | Discovery, Normalization, Classification, CBOM, Risk, Mosca, Recommendations, FastAPI Backend, React UI, and Public GitHub Scanning |
+| **Test Suite Health** | 🟢 **567 / 568 Tests Passing (1 skipped, 100% active pass rate)** | Run via `pytest` (0 regressions, ~11.8s execution) |
+| **Codebase Coverage** | 🟢 **93% Rec Engine, 97% Mosca, 98% Risk, 92% CBOM** | High coverage across all core analytics engines and backend API |
 | **Pipeline Validation** | 🟢 **147 Canonical Assets Fully Evaluated E2E** | 289 raw findings → 147 assets → 147 classified → 147 risk → 147 Mosca → 147 recommendations |
 | **Active Blockers** | 🟢 **None** | No blocking architectural or operational defects |
-| **Documentation Sync** | 🟢 **100% Synchronized** | `docs/01` to `docs/10`, `AGENTS.md`, `PROJECT_RULES.md`, `PROJECT_CONTEXT.md`, `current_status.md` |
-| **Next Target Milestone** | **Phase 4: FastAPI Backend & Interactive UI** | `backend/api/` REST gateway, CBOM explorer, Mosca slider, and PQC roadmap dashboard |
+| **Documentation Sync** | 🟢 **100% Synchronized** | `docs/01` to `docs/11`, `AGENTS.md`, `PROJECT_RULES.md`, `PROJECT_CONTEXT.md`, `current_status.md` |
+| **Next Target Milestone** | **Milestone 5: Presentation Polish & Packaging** | Report downloads, static audits, final packaging |
 | **API Contract** | 🟢 **Frozen & Aligned (v1.2.0)** — `docs/10_API_CONTRACT.md` | 20 sections, aligned across Risk, Mosca, and Recommendations |
 | **Frontend Spec** | 🟢 **Frozen** — `docs/11_FRONTEND_PRODUCT_SPEC.md` | 12 sections, E2E user flow, component guidance, visual direction |
 

@@ -15,7 +15,7 @@ from typing import Any
 from core.models import CryptoAsset
 from scanners.framework.models import FileLocation, RawFinding
 
-from backend.store import STAGE_ORDER, ScanRecord
+from backend.store import GITHUB_STAGE_ORDER, UPLOAD_STAGE_ORDER, ScanRecord
 
 
 def location_dict(loc: FileLocation) -> dict[str, Any]:
@@ -78,15 +78,25 @@ def scan_dict(scan: ScanRecord) -> dict[str, Any]:
     def iso(dt):
         return dt.isoformat().replace("+00:00", "Z") if dt else None
 
+    stage_names = (
+        GITHUB_STAGE_ORDER
+        if scan.source_type == "GITHUB"
+        else UPLOAD_STAGE_ORDER
+    )
+
     return {
         "scan_id": scan.scan_id,
         "name": scan.name,
         "artifact_id": scan.artifact_id,
+        "source_type": scan.source_type,
+        "source_url": scan.source_url,
         "target": {
             "target_id": scan.scan_id,
             "name": scan.target_name,
             "target_type": scan.target_type,
             "path": scan.target_path,
+            "source_type": scan.source_type,
+            "source_url": scan.source_url,
         },
         "status": scan.status,
         "current_stage": scan.current_stage,
@@ -94,10 +104,16 @@ def scan_dict(scan: ScanRecord) -> dict[str, Any]:
         "started_at": iso(scan.started_at),
         "completed_at": iso(scan.completed_at),
         "duration_seconds": scan.duration_seconds,
+        "overall_risk_score": (
+            scan.risk_report.overall_risk_score if scan.risk_report else None
+        ),
+        "overall_severity": (
+            scan.risk_report.overall_severity.value if scan.risk_report else None
+        ),
         "progress": {
             "stages": [
                 {"name": name, "status": scan.stage_status.get(name, "WAITING")}
-                for name in STAGE_ORDER
+                for name in stage_names
             ],
             "directories_visited": scan.directories_visited,
             "files_discovered": scan.files_discovered,

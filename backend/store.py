@@ -52,7 +52,7 @@ class ArtifactRecord:
         }
 
 
-STAGE_ORDER = [
+UPLOAD_STAGE_ORDER = [
     "DISCOVERY",
     "NORMALIZATION",
     "CLASSIFICATION",
@@ -61,6 +61,19 @@ STAGE_ORDER = [
     "MOSCA_ANALYSIS",
     "PQC_ANALYSIS",
 ]
+
+GITHUB_STAGE_ORDER = [
+    "ACQUISITION",
+    "DISCOVERY",
+    "NORMALIZATION",
+    "CLASSIFICATION",
+    "CBOM",
+    "RISK_ANALYSIS",
+    "MOSCA_ANALYSIS",
+    "PQC_ANALYSIS",
+]
+
+STAGE_ORDER = UPLOAD_STAGE_ORDER
 
 
 @dataclass
@@ -78,6 +91,8 @@ class ScanRecord:
     target_path: str
     target_type: str
     target_name: Optional[str]
+    source_type: str = "UPLOAD"  # "UPLOAD" | "GITHUB"
+    source_url: Optional[str] = None
     status: str = "QUEUED"  # QUEUED | RUNNING | COMPLETED | PARTIAL | FAILED | CANCELLED
     current_stage: str = "QUEUED"
     stage_status: dict[str, str] = field(
@@ -86,6 +101,11 @@ class ScanRecord:
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     started_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
+
+    def __post_init__(self) -> None:
+        if self.source_type == "GITHUB" and "ACQUISITION" not in self.stage_status:
+            self.stage_status = {name: "WAITING" for name in GITHUB_STAGE_ORDER}
+
 
     # Discovery
     directories_visited: int = 0

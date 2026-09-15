@@ -114,7 +114,9 @@ export const api = {
 
   createScan: (body: {
     name?: string;
-    artifact_id: string;
+    artifact_id?: string;
+    source_type?: 'UPLOAD' | 'GITHUB';
+    repository_url?: string;
     target_type?: string;
     mosca_params?: {
       data_shelf_life_years_x?: number;

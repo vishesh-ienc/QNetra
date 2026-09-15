@@ -24,9 +24,9 @@ Current focus: static audit and UX polish.
 
 ## Overall Status
 
-* **Status:** 🟢 **On Track** (Phase 1, 2 & 3 Complete — 512/512 Tests Passing, 93% Recommendation Engine Coverage)
+* **Status:** 🟢 **On Track** (Phase 1, 2, 3 & 4 Substantially Complete + Public GitHub Scanning — 567/568 Tests Passing)
 * **Active Blockers:** None
-* **Next Phase Transition:** Phase 4 — FastAPI Backend & Web Dashboard
+* **Next Phase Transition:** Milestone 5 — Presentation Polish & Packaging
 
 ---
 
@@ -166,6 +166,7 @@ Current focus: static audit and UX polish.
 
 | Timestamp (ISO) | Author | Change Summary | Affected Files |
 | :--- | :--- | :--- | :--- |
+| 2026-09-15T11:05:00 | AI Agent | Public GitHub Repository Scanning: added `backend/github.py` with URL normalization, non-blocking pre-flight accessibility check, shallow cloning into isolated workspace, automatic workspace cleanup in pipeline `finally:`, aligned error messages, UI source segmented selector (`New Scan` -> `[ Upload Files ]` / `[ GitHub Repository ]` -> `[ Scan Repository ]`), real-time technical metadata grid, Scan History source distinction, 14 new tests (567 passed, 0 failed, DEC-017) | `backend/github.py`, `backend/pipeline.py`, `backend/routes/scans.py`, `backend/store.py`, `backend/serializers.py`, `backend/tests/test_github_acquisition.py`, `frontend/src/*`, `docs/*` |
 | 2026-09-04T17:25:00 | AI Agent | Phase 3.3 Corrective Pass: Introduced `CLASSICAL_UPGRADE` recommendation type, remapped classical strengthenings (hashes, symmetric ciphers, classically broken), added 14 new tests (118 engine tests, 526 total passing) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_status.md`, `current_prompt_update.md` |
 | 2026-09-04T15:17:00 | AI Agent | Implemented Phase 3 Milestone 3.3: NIST PQC Recommendation Engine (models, knowledge, mapper, engine, __init__, 104 tests, 512 total passing, 93% coverage, DEC-016) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |
 | 2026-09-04T09:30:00 | AI Agent | Implemented Phase 3 Milestone 3.2: Michele Mosca Migration Engine (models, knowledge, calculator, engine, __init__, 95 tests, 408 total passing, 97% coverage, DEC-015) | `core/mosca_engine/*`, `tests/test_core/test_mosca_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |
@@ -174,10 +175,6 @@ Current focus: static audit and UX polish.
 | 2026-09-03T23:33:00 | AI Agent | Implemented Phase 2 Milestone 2.2: Classification Engine, normalization bug fix, schema extension, 54 new tests (153 total, 85% core coverage) | `core/classification/*`, `core/models.py`, `core/normalization/algorithm_normalizer.py`, `tests/test_core/*`, `docs/*`, `current_prompt_update.md` |
 | 2026-09-03T22:55:00 | AI Agent | Implemented Phase 2 Normalization & CryptoAsset generation (models, normalizer, deduplicator, confidence aggregator, 19 tests, 82% coverage) | `core/*`, `tests/test_core/*`, `docs/*`, `current_status.md`, `current_prompt_update.md` |
 | 2026-09-03T22:45:00 | AI Agent | Established current_prompt_update.md and codified RULE-012 in PROJECT_RULES.md & AGENTS.md | `current_prompt_update.md`, `PROJECT_RULES.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
-| 2026-09-14T00:37:00 | AI Agent | Static audit pass (Checkpoint 13): verified state-gate coverage on all 9 result pages; fixed QuantumPage title inconsistency ("Quantum" → "Quantum Exposure"); updated current_prompt_update.md | `frontend/src/pages/QuantumPage.tsx`, `current_prompt_update.md` |
-| 2026-09-14T00:00:00 | AI Agent | IA cleanup (Checkpoint 12): standardized nav labels, CommandCenter executive summary redesign, FindingsPage/MigrationPage/ReportsPage title updates | `frontend/src/components/layout/nav.ts`, `frontend/src/pages/CommandCenter.tsx`, `frontend/src/pages/FindingsPage.tsx`, `frontend/src/pages/MigrationPage.tsx`, `frontend/src/pages/ReportsPage.tsx` |
-| 2026-09-13T00:00:00 | AI Agent | Implemented Phase 4 frontend: ScanPage redesign with drop zone + informational guide, ScanGate result availability states, ScanHistory page, react-query polling | `frontend/src/pages/ScanPage.tsx`, `frontend/src/pages/ScanHistoryPage.tsx`, `frontend/src/pages/shared/ScanGate.tsx` |
-| 2026-09-04T17:25:00 | AI Agent | Phase 3.3 Corrective Pass: Introduced `CLASSICAL_UPGRADE` recommendation type | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py` |
 | 2026-09-01T14:57:00 | AI Agent | Created current_status.md living status tracker and registered it in AGENTS.md + PROJECT_CONTEXT.md | `current_status.md`, `AGENTS.md`, `PROJECT_CONTEXT.md` |
 | 2026-08-29T18:25:00 | AI Agent | Implemented Discovery Layer foundation, Repository Scanner, Container Scanner, Binary Scanner, Registries, and 77-test suite | `scanners/*`, `samples/*`, `tests/*`, `docs/*` |
 | 2026-08-29T16:10:00 | System Init | Created repository structure, all core documentation files, rules, and data contracts | `README.md`, `AGENTS.md`, `PROJECT_RULES.md`, `docs/*` |

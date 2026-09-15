@@ -24,6 +24,7 @@ from __future__ import annotations
 import logging
 import traceback
 from datetime import date, datetime, timezone
+from pathlib import Path
 from typing import Optional
 
 from core.classification.classifier import ClassificationEngine
@@ -93,6 +94,15 @@ def run_pipeline(
     }
 
     try:
+        # --- ACQUISITION (GitHub scans only) ------------------------------
+        if scan.source_type == "GITHUB":
+            _set_stage(scan, "ACQUISITION", "RUNNING")
+            from backend.github import acquire_github_repository
+
+            dest_dir = acquire_github_repository(scan.source_url, scan.scan_id)
+            scan.target_path = str(dest_dir)
+            _set_stage(scan, "ACQUISITION", "COMPLETED")
+
         # --- DISCOVERY -----------------------------------------------------
         _set_stage(scan, "DISCOVERY", "RUNNING")
         target_type = _TARGET_TYPE_MAP.get(scan.target_type, TargetType.AUTO)
@@ -189,3 +199,9 @@ def run_pipeline(
                 scan.stage_status[stage] = "FAILED"
     finally:
         scan.completed_at = datetime.now(timezone.utc)
+        if scan.source_type == "GITHUB" and scan.target_path:
+            try:
+                from backend.github import safe_rmtree
+                safe_rmtree(Path(scan.target_path))
+            except Exception as cleanup_err:  # noqa: BLE001
+                logger.warning("Failed to clean up cloned repository at %s: %s", scan.target_path, cleanup_err)

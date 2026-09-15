@@ -100,6 +100,7 @@ export type StageStatus = 'WAITING' | 'RUNNING' | 'COMPLETED' | 'SKIPPED' | 'FAI
 
 export type PipelineStage =
   | 'QUEUED'
+  | 'ACQUISITION'
   | 'DISCOVERY'
   | 'NORMALIZATION'
   | 'CLASSIFICATION'
@@ -146,12 +147,16 @@ export interface ScanTargetSummary {
   name: string | null;
   target_type: string;
   path: string;
+  source_type?: 'UPLOAD' | 'GITHUB';
+  source_url?: string | null;
 }
 
 export interface Scan {
   scan_id: string;
   name: string | null;
   artifact_id: string | null;
+  source_type?: 'UPLOAD' | 'GITHUB';
+  source_url?: string | null;
   target: ScanTargetSummary;
   status: ScanStatus;
   current_stage: PipelineStage;
@@ -159,6 +164,8 @@ export interface Scan {
   started_at: string | null;
   completed_at: string | null;
   duration_seconds: number | null;
+  overall_risk_score?: number | null;
+  overall_severity?: Severity | null;
   progress: ScanProgress;
   discovery: DiscoveryStatistics | null;
   normalization: NormalizationStatistics | null;

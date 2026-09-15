@@ -320,6 +320,25 @@
 * **Inputs:** `CompleteScanResult`.
 * **Outputs:** Downloadable file streams.
 * **Dependencies:** PDF/CSV generation libraries.
-* **Status:** Planned
+* **Status:** Implemented (`backend/routes/export.py`)
 * **MVP Priority:** Medium (P1)
-* **Tests:** `tests/test_export_service.py`.
+* **Tests:** `backend/tests/test_export.py`.
+
+---
+
+### 15. GitHub Repository Acquisition Layer
+* **Module Identifier:** `MOD-015`
+* **Path:** `backend/github.py`
+* **Purpose:** Validates public GitHub repository URLs, confirms public access pre-flight, and performs shallow clones for scanning.
+* **Responsibility:**
+  * Normalize and sanitize `https://github.com/<owner>/<repo>` URLs.
+  * Check public reachability via `git ls-remote` without interactive authentication prompts.
+  * Execute fast, shallow git clone (`--depth 1 --single-branch --no-tags`).
+  * Strip `.git` repository metadata and manage Windows read-only file attributes safely.
+* **Inputs:** Repository URL string, scan ID.
+* **Outputs:** Local filesystem path to repository workspace.
+* **Dependencies:** Git CLI executable, `pathlib`, `subprocess`, `tempfile`.
+* **Status:** Implemented (`backend/github.py`)
+* **MVP Priority:** High (P0)
+* **Tests:** `backend/tests/test_github_acquisition.py`.
+

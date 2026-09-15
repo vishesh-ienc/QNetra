@@ -30,6 +30,8 @@ const STAGE_GLYPH: Record<StageStatus, string> = {
 
 /** Human-readable pending text per stage — shown for WAITING stages. */
 const STAGE_PENDING_AFTER: Partial<Record<PipelineStage, string>> = {
+  ACQUISITION:   'Available after repository cloning starts.',
+  DISCOVERY:     'Available after acquisition completes.',
   NORMALIZATION: 'Available after discovery completes.',
   CLASSIFICATION:'Available after normalization completes.',
   RISK_ANALYSIS: 'Available after classification completes.',
@@ -40,6 +42,16 @@ const STAGE_PENDING_AFTER: Partial<Record<PipelineStage, string>> = {
 };
 
 const SUPPORTED_FORMATS = [
+  {
+    title: 'Public GitHub Repositories',
+    description: 'Direct shallow-clone scanning of public GitHub repositories for cryptographic libraries, algorithms, and post-quantum readiness.',
+    badge: 'git clone --depth 1',
+    icon: (
+      <svg viewBox="0 0 16 16" width="20" height="20" fill="currentColor" aria-hidden="true">
+        <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+      </svg>
+    ),
+  },
   {
     title: 'Source Repositories',
     description: 'ZIP archives of source code. Analyzes AST and APIs in Python, TypeScript/JavaScript, Java, and C/C++.',
@@ -125,6 +137,44 @@ function useElapsedTimer(startedAt: string | null): string | null {
 }
 
 /* -------------------------------------------------------------------------- */
+/* GitHub URL helper                                                          */
+/* -------------------------------------------------------------------------- */
+
+function parseGitHubUrl(url: string): { valid: boolean; owner?: string; repo?: string; message?: string } {
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return { valid: false };
+  }
+  let clean = trimmed;
+  if (!clean.startsWith('http://') && !clean.startsWith('https://')) {
+    clean = 'https://' + clean;
+  }
+  try {
+    const parsed = new URL(clean);
+    const host = parsed.hostname.toLowerCase();
+    if (host !== 'github.com' && host !== 'www.github.com') {
+      return { valid: false, message: 'Enter a valid public GitHub repository URL (only github.com is supported).' };
+    }
+    const path = parsed.pathname.replace(/^\/+|\/+$/g, '');
+    const parts = path.split('/');
+    if (parts.length !== 2 || !parts[0] || !parts[1]) {
+      return { valid: false, message: 'Enter a valid public GitHub repository URL (format: https://github.com/organization/repository).' };
+    }
+    const owner = parts[0];
+    let repo = parts[1];
+    if (repo.endsWith('.git')) {
+      repo = repo.slice(0, -4);
+    }
+    if (repo === '.' || repo === '..' || repo.startsWith('-')) {
+      return { valid: false, message: `Enter a valid public GitHub repository URL (invalid repository name "${repo}").` };
+    }
+    return { valid: true, owner, repo };
+  } catch {
+    return { valid: false, message: 'Enter a valid public GitHub repository URL.' };
+  }
+}
+
+/* -------------------------------------------------------------------------- */
 /* Main component                                                              */
 /* -------------------------------------------------------------------------- */
 
@@ -132,7 +182,9 @@ export function ScanPage() {
   const { scan, refetch, setScanId } = useScanContext();
   const navigate = useNavigate();
 
+  const [sourceMode, setSourceMode] = useState<'upload' | 'github'>('upload');
   const [file, setFile] = useState<File | null>(null);
+  const [githubUrl, setGithubUrl] = useState('');
   const [dragging, setDragging] = useState(false);
   const [startError, setStartError] = useState<unknown>(null);
   const [starting, setStarting] = useState(false);
@@ -191,6 +243,7 @@ export function ScanPage() {
       const created = await api.createScan({
         name: file.name,
         artifact_id: artifact.artifact_id,
+        source_type: 'UPLOAD',
         mosca_params: { data_shelf_life_years_x: dataShelfLifeYears },
       });
       setScanId(created.scan_id);
@@ -203,6 +256,28 @@ export function ScanPage() {
     }
   }, [file, dataShelfLifeYears, setScanId, refetch]);
 
+  const startGitHubScan = useCallback(async () => {
+    const parsed = parseGitHubUrl(githubUrl);
+    if (!parsed.valid) return;
+    setStarting(true);
+    setStartError(null);
+    redirectedRef.current = false;
+    try {
+      const created = await api.createScan({
+        name: `${parsed.owner}/${parsed.repo}`,
+        source_type: 'GITHUB',
+        repository_url: githubUrl.trim(),
+        mosca_params: { data_shelf_life_years_x: dataShelfLifeYears },
+      });
+      setScanId(created.scan_id);
+      refetch();
+    } catch (caught) {
+      setStartError(caught);
+    } finally {
+      setStarting(false);
+    }
+  }, [githubUrl, dataShelfLifeYears, setScanId, refetch]);
+
   /* ── BRANCH B: SCANNING TAKEOVER ─────────────────────────────────────── */
   if (isActive && scan) {
     const p = scan.progress;
@@ -213,18 +288,42 @@ export function ScanPage() {
     const currentStage = scan.current_stage;
     const activeLabel  = stageLabel[currentStage] ?? currentStage;
 
+    // Dynamic stage transition phrasing per prompt specifications
+    const isAcquisitionComplete = scan.progress.stages.find((s) => s.name === 'ACQUISITION')?.status === 'COMPLETED';
+    let dynamicActivity = stageActivity[currentStage] ?? 'Processing…';
+    if (scan.source_type === 'GITHUB') {
+      if (currentStage === 'ACQUISITION') {
+        dynamicActivity = 'Acquiring repository from GitHub…';
+      } else if (currentStage === 'DISCOVERY' && isAcquisitionComplete) {
+        dynamicActivity = 'Repository acquired. Starting cryptographic discovery…';
+      } else if (currentStage === 'DISCOVERY') {
+        dynamicActivity = 'Discovering cryptographic usage…';
+      }
+    }
+
     return (
       <div className={styles.scanningLayout}>
         <div className={styles.scanningHeader}>
           <div className={styles.scanningEyebrow}>
             <span className={styles.scanningPulse} aria-hidden="true" />
             Scan in progress
+            {scan.source_type === 'GITHUB' && (
+              <span className={styles.sourceTag}>GitHub Repository</span>
+            )}
           </div>
           <h1 className={styles.scanningTitle}>
             {scan.name ?? scan.target.name ?? 'Analyzing target'}
           </h1>
+          {scan.source_url && (
+            <div className={styles.scanningSourceUrl}>
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor" aria-hidden="true">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+              <span className="mono">{scan.source_url}</span>
+            </div>
+          )}
           <div className={styles.scanningTagline}>
-            <span>{activeLabel} — {stageActivity[currentStage] ?? 'Processing…'}</span>
+            <span>{activeLabel} — {dynamicActivity}</span>
             {elapsed !== null && (
               <span className={styles.elapsedBadge} aria-label="Elapsed time">
                 {elapsed}
@@ -234,6 +333,35 @@ export function ScanPage() {
           <p className={styles.etaNote}>
             Usually completes in under a minute.
           </p>
+        </div>
+
+        {/* Technical repository metadata grid */}
+        <div className={styles.scanMetaGrid} role="region" aria-label="Repository Information">
+          <div className={styles.scanMetaItem}>
+            <span className={styles.scanMetaLabel}>Repository</span>
+            <span className={`${styles.scanMetaValue} mono`}>
+              {scan.target.name ?? scan.name ?? 'Target'}
+            </span>
+          </div>
+          <div className={styles.scanMetaItem}>
+            <span className={styles.scanMetaLabel}>Source</span>
+            <span className={styles.scanMetaValue}>
+              {scan.source_type === 'GITHUB' ? 'Public GitHub repository' : 'Uploaded files'}
+            </span>
+          </div>
+          <div className={styles.scanMetaItem}>
+            <span className={styles.scanMetaLabel}>Status</span>
+            <span className={styles.scanMetaValue}>
+              <span className={styles.scanningPulse} aria-hidden="true" />
+              Scanning
+            </span>
+          </div>
+          <div className={styles.scanMetaItem}>
+            <span className={styles.scanMetaLabel}>Current stage</span>
+            <span className={styles.scanMetaValue}>
+              {activeLabel}
+            </span>
+          </div>
         </div>
 
         {(filesScanned != null || rawFindings != null || assetsCount != null) && (
@@ -350,23 +478,72 @@ export function ScanPage() {
         </div>
 
         <div className={styles.singleScanSection}>
-          <UploadZone
-            file={file}
-            dragging={dragging}
-            starting={starting}
-            startError={startError}
-            showAdvanced={showAdvanced}
-            dataShelfLifeYears={dataShelfLifeYears}
-            inputRef={inputRef}
-            onDrop={onDrop}
-            onDragOver={() => setDragging(true)}
-            onDragLeave={() => setDragging(false)}
-            onFileChange={(f) => { setFile(f); setStartError(null); }}
-            onFileRemove={() => setFile(null)}
-            onStart={startScan}
-            onToggleAdvanced={() => setShowAdvanced(v => !v)}
-            onShelfLifeChange={setDataShelfLifeYears}
-          />
+          <div className={styles.sourceSelector}>
+            <span className={styles.sourceSelectorLabel}>Choose scan source</span>
+            <div className={styles.sourceToggle} role="tablist" aria-label="Scan source type">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sourceMode === 'upload'}
+                className={`${styles.sourceToggleBtn} ${sourceMode === 'upload' ? styles.sourceToggleBtnActive : ''}`}
+                onClick={() => { setSourceMode('upload'); setStartError(null); }}
+              >
+                <span className={styles.sourceToggleIcon} aria-hidden="true">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                    <path d="M2.5 10.5v2a1 1 0 001 1h9a1 1 0 001-1v-2M8 2.5v7.5M5 5.5l3-3 3 3" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+                Upload Files
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={sourceMode === 'github'}
+                className={`${styles.sourceToggleBtn} ${sourceMode === 'github' ? styles.sourceToggleBtnActive : ''}`}
+                onClick={() => { setSourceMode('github'); setStartError(null); }}
+              >
+                <span className={styles.sourceToggleIcon} aria-hidden="true">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                  </svg>
+                </span>
+                GitHub Repository
+              </button>
+            </div>
+          </div>
+          <div className={styles.sourceDivider} />
+
+          {sourceMode === 'upload' ? (
+            <UploadZone
+              file={file}
+              dragging={dragging}
+              starting={starting}
+              startError={startError}
+              showAdvanced={showAdvanced}
+              dataShelfLifeYears={dataShelfLifeYears}
+              inputRef={inputRef}
+              onDrop={onDrop}
+              onDragOver={() => setDragging(true)}
+              onDragLeave={() => setDragging(false)}
+              onFileChange={(f) => { setFile(f); setStartError(null); }}
+              onFileRemove={() => setFile(null)}
+              onStart={startScan}
+              onToggleAdvanced={() => setShowAdvanced(v => !v)}
+              onShelfLifeChange={setDataShelfLifeYears}
+            />
+          ) : (
+            <GitHubZone
+              url={githubUrl}
+              starting={starting}
+              startError={startError}
+              showAdvanced={showAdvanced}
+              dataShelfLifeYears={dataShelfLifeYears}
+              onUrlChange={(u) => { setGithubUrl(u); setStartError(null); }}
+              onStart={startGitHubScan}
+              onToggleAdvanced={() => setShowAdvanced(v => !v)}
+              onShelfLifeChange={setDataShelfLifeYears}
+            />
+          )}
         </div>
       </div>
     );
@@ -376,29 +553,79 @@ export function ScanPage() {
   return (
     <div className={styles.singleScanSection}>
       <div className={styles.scanHeader}>
-        <h1 className={styles.scanTitle}>Start Cryptographic Scan</h1>
+        <p className={styles.scanEyebrow}>Scan</p>
+        <h1 className={styles.scanTitle}>New Scan</h1>
         <p className={styles.scanSubtitle}>
-          Upload an artifact to discover all cryptographic primitives, evaluate quantum risk, and generate PQC migration intelligence.
+          Scan a publicly accessible GitHub repository or uploaded files for cryptographic usage and quantum exposure.
         </p>
       </div>
 
-      <UploadZone
-        file={file}
-        dragging={dragging}
-        starting={starting}
-        startError={startError}
-        showAdvanced={showAdvanced}
-        dataShelfLifeYears={dataShelfLifeYears}
-        inputRef={inputRef}
-        onDrop={onDrop}
-        onDragOver={() => setDragging(true)}
-        onDragLeave={() => setDragging(false)}
-        onFileChange={(f) => { setFile(f); setStartError(null); }}
-        onFileRemove={() => setFile(null)}
-        onStart={startScan}
-        onToggleAdvanced={() => setShowAdvanced(v => !v)}
-        onShelfLifeChange={setDataShelfLifeYears}
-      />
+      <div className={styles.sourceSelector}>
+        <span className={styles.sourceSelectorLabel}>Choose scan source</span>
+        <div className={styles.sourceToggle} role="tablist" aria-label="Scan source type">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={sourceMode === 'upload'}
+            className={`${styles.sourceToggleBtn} ${sourceMode === 'upload' ? styles.sourceToggleBtnActive : ''}`}
+            onClick={() => { setSourceMode('upload'); setStartError(null); }}
+          >
+            <span className={styles.sourceToggleIcon} aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M2.5 10.5v2a1 1 0 001 1h9a1 1 0 001-1v-2M8 2.5v7.5M5 5.5l3-3 3 3" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </span>
+            Upload Files
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={sourceMode === 'github'}
+            className={`${styles.sourceToggleBtn} ${sourceMode === 'github' ? styles.sourceToggleBtnActive : ''}`}
+            onClick={() => { setSourceMode('github'); setStartError(null); }}
+          >
+            <span className={styles.sourceToggleIcon} aria-hidden="true">
+              <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+              </svg>
+            </span>
+            GitHub Repository
+          </button>
+        </div>
+      </div>
+      <div className={styles.sourceDivider} />
+
+      {sourceMode === 'upload' ? (
+        <UploadZone
+          file={file}
+          dragging={dragging}
+          starting={starting}
+          startError={startError}
+          showAdvanced={showAdvanced}
+          dataShelfLifeYears={dataShelfLifeYears}
+          inputRef={inputRef}
+          onDrop={onDrop}
+          onDragOver={() => setDragging(true)}
+          onDragLeave={() => setDragging(false)}
+          onFileChange={(f) => { setFile(f); setStartError(null); }}
+          onFileRemove={() => setFile(null)}
+          onStart={startScan}
+          onToggleAdvanced={() => setShowAdvanced(v => !v)}
+          onShelfLifeChange={setDataShelfLifeYears}
+        />
+      ) : (
+        <GitHubZone
+          url={githubUrl}
+          starting={starting}
+          startError={startError}
+          showAdvanced={showAdvanced}
+          dataShelfLifeYears={dataShelfLifeYears}
+          onUrlChange={(u) => { setGithubUrl(u); setStartError(null); }}
+          onStart={startGitHubScan}
+          onToggleAdvanced={() => setShowAdvanced(v => !v)}
+          onShelfLifeChange={setDataShelfLifeYears}
+        />
+      )}
 
       {/* Informational Section: Supported targets and file formats */}
       <div className={styles.supportedSection}>
@@ -597,3 +824,156 @@ function UploadZone({
     </div>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* GitHubZone                                                                 */
+/* -------------------------------------------------------------------------- */
+
+interface GitHubZoneProps {
+  url: string;
+  starting: boolean;
+  startError: unknown;
+  showAdvanced: boolean;
+  dataShelfLifeYears: number;
+  onUrlChange: (url: string) => void;
+  onStart: () => void;
+  onToggleAdvanced: () => void;
+  onShelfLifeChange: (n: number) => void;
+}
+
+function GitHubZone({
+  url,
+  starting,
+  startError,
+  showAdvanced,
+  dataShelfLifeYears,
+  onUrlChange,
+  onStart,
+  onToggleAdvanced,
+  onShelfLifeChange,
+}: GitHubZoneProps) {
+  const parsed = parseGitHubUrl(url);
+  const isInputFilled = url.trim().length > 0;
+  const canStart = parsed.valid && !starting && API_MODE !== 'mock';
+
+  return (
+    <div className={styles.uploadCard}>
+      <div className={styles.githubCard}>
+        <div className={styles.githubHeader}>
+          <div className={styles.githubIconBadge} aria-hidden="true">
+            <svg viewBox="0 0 16 16" width="22" height="22" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+          </div>
+          <div className={styles.githubHeaderText}>
+            <p className={styles.githubTitle}>GitHub Repository</p>
+            <p className={styles.githubSubtitle}>
+              Scan a publicly accessible GitHub repository for cryptographic usage and quantum exposure.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.githubInputGroup}>
+          <label htmlFor="github-repo-url" className={styles.githubInputLabel}>
+            Repository URL
+          </label>
+          <div className={styles.githubInputWrapper}>
+            <input
+              id="github-repo-url"
+              type="url"
+              value={url}
+              onChange={(e) => onUrlChange(e.target.value)}
+              placeholder="https://github.com/organization/repository"
+              className={styles.githubInput}
+              autoFocus
+              autoComplete="off"
+              spellCheck="false"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && canStart) {
+                  e.preventDefault();
+                  onStart();
+                }
+              }}
+            />
+          </div>
+          <div className={styles.githubValidation}>
+            {isInputFilled && parsed.valid && (
+              <span className={styles.githubValidationValid}>
+                ✓ Ready to scan {parsed.owner}/{parsed.repo}
+              </span>
+            )}
+            {isInputFilled && !parsed.valid && (
+              <span className={styles.githubValidationError}>
+                {parsed.message ?? 'Enter a valid public GitHub repository URL.'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Optional advanced settings */}
+        <div className={styles.advancedToggle}>
+          <button
+            type="button"
+            className={styles.advancedToggleBtn}
+            onClick={onToggleAdvanced}
+            aria-expanded={showAdvanced}
+          >
+            <svg
+              viewBox="0 0 12 12"
+              width="10"
+              height="10"
+              fill="none"
+              aria-hidden="true"
+              className={`${styles.advancedChevron} ${showAdvanced ? styles.advancedChevronOpen : ''}`}
+            >
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            Advanced options
+          </button>
+          {showAdvanced && (
+            <div className={styles.advancedPanel}>
+              <label className={styles.advancedField}>
+                <div className={styles.advancedFieldLabel}>
+                  <span>Data shelf life (X, years)</span>
+                  <span className={styles.advancedFieldHint}>
+                    How long this data must stay confidential — feeds Mosca assessment ($X + Y &gt; Z$).
+                  </span>
+                </div>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={dataShelfLifeYears}
+                  onChange={(e) => onShelfLifeChange(Number(e.target.value) || 1)}
+                  className={styles.advancedInput}
+                />
+              </label>
+            </div>
+          )}
+        </div>
+
+        <div className={styles.githubNotice}>
+          <strong>Public Repositories Only:</strong> Only public GitHub repositories are supported. QNetra shallow-clones (<code className="mono">--depth 1</code>) the default branch directly on the backend. No authentication credentials, private repositories, or write permissions are required or supported.
+        </div>
+
+        <div className={styles.githubActions}>
+          <Button variant="primary" onClick={onStart} disabled={!canStart}>
+            {starting ? 'Acquiring & Starting…' : 'Scan Repository'}
+          </Button>
+          {url && (
+            <Button variant="ghost" onClick={() => onUrlChange('')} disabled={starting}>
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {startError !== null && (
+        <div className={styles.startError}>
+          <ErrorState error={startError} compact />
+        </div>
+      )}
+    </div>
+  );
+}
+

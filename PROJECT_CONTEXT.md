@@ -25,10 +25,10 @@
 ### End-to-End Intelligence Pipeline
 
 ```text
-Technical Assets (Repos, Containers, Binaries)
+Technical Assets (Repos, Containers, Binaries, Public GitHub Repos)
         ↓
-Cryptographic Discovery Layer                       [✓ IMPLEMENTED - Phase 1]
-  (AST Analysis, Regex, Symbols, Package Metadata)
+Cryptographic Discovery & Acquisition Layer         [✓ IMPLEMENTED - Phase 1 & 4]
+  (Git Shallow Clone, AST Analysis, Regex, Symbols, Packages)
         ↓
 Raw Findings (RawFinding v1.1.0 Contract)           [✓ IMPLEMENTED - Phase 1]
         ↓
@@ -46,7 +46,7 @@ Mosca Migration Urgency Engine (X + Y > Z)          [✓ IMPLEMENTED - Phase 3]
         ↓
 PQC & Hybrid Recommendation Engine                  [✓ IMPLEMENTED - Phase 3]
         ↓
-FastAPI Backend & Interactive Web UI Dashboard      [○ PLANNED - Phase 4]
+FastAPI Backend & Interactive Web UI Dashboard      [✓ IMPLEMENTED - Phase 4]
 ```
 
 ---
@@ -205,7 +205,7 @@ Phase 3 Milestone 3.3: NIST FIPS 203/204/205 PQC Recommendation Engine.
   * Only finalized NIST PQC: ML-KEM (FIPS 203), ML-DSA (FIPS 204), SLH-DSA (FIPS 205).
   * Parameter policy: ML-KEM-768 default (Cat.3); ML-KEM-1024 for RSA≥3072/ECC≥384.
   * Explicit hybrids: `X25519+ML-KEM-768` and `Ed25519+ML-DSA-65` only.
-* **Test Suite (`tests/`):** 526 passed tests (118 recommendation engine tests), 93% recommendation engine coverage, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
+* **Test Suite (`tests/`, `backend/tests/`):** 567 passed tests (14 GitHub acquisition and lifecycle tests), 93% recommendation engine coverage, 97% Mosca engine coverage, 98% risk engine coverage, 92% CBOM coverage.
 
 ### ○ PLANNED (Upcoming Phases)
 * **Phase 4:** `backend.api` (FastAPI REST service), `frontend` (Interactive dashboard and charts), `backend.export_service` (PDF/CSV/CBOM export).

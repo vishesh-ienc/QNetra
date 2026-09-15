@@ -11,7 +11,7 @@ export function SideNav({ onNavigate }: { onNavigate?: () => void }) {
 
   // The ordered pipeline — used to determine if a nav stage is currently active
   const STAGE_ORDER: PipelineStage[] = [
-    'QUEUED', 'DISCOVERY', 'NORMALIZATION', 'CLASSIFICATION',
+    'QUEUED', 'ACQUISITION', 'DISCOVERY', 'NORMALIZATION', 'CLASSIFICATION',
     'RISK_ANALYSIS', 'MOSCA_ANALYSIS', 'PQC_ANALYSIS', 'CBOM', 'COMPLETED',
   ];
 

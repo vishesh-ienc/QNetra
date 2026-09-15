@@ -41,3 +41,12 @@ def scan_not_ready(scan_id: str, status: str) -> ApiError:
         "SCAN_NOT_READY",
         f"Scan {scan_id} has not completed (status: {status}). Results are not yet available.",
     )
+
+
+def github_repo_inaccessible(url: str, reason: str) -> ApiError:
+    return ApiError(
+        400,
+        "GITHUB_REPO_INACCESSIBLE",
+        f"Unable to access public GitHub repository '{url}': {reason}",
+    )
+

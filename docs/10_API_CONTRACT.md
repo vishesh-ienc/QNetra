@@ -159,22 +159,16 @@ Delete artifact and extracted filesystem. **Response: `204 No Content`**
 
 ### `POST /scans`
 
-Initiate a new cryptographic analysis scan.
+Initiate a new cryptographic analysis scan. Supports both uploaded artifacts (`source_type: "UPLOAD"`) and public GitHub repositories (`source_type: "GITHUB"`).
 
-**Request Body:**
+**Request Body (Upload Scan):**
 
 ```json
 {
   "name": "Payment Service Audit Q4 2026",
+  "source_type": "UPLOAD",
   "artifact_id": "a1f93bc1-1234-4c28-98e3-a4c3e21199a0",
   "target_type": "REPOSITORY",
-  "options": {
-    "enable_ast": true,
-    "enable_regex": true,
-    "enable_import_analysis": true,
-    "exclude_patterns": ["node_modules", ".git", "dist", "build"],
-    "max_file_size_bytes": 10485760
-  },
   "mosca_params": {
     "data_shelf_life_years_x": 10.0,
     "migration_time_years_y": 3.0,
@@ -183,6 +177,30 @@ Initiate a new cryptographic analysis scan.
 }
 ```
 
+**Request Body (Public GitHub Repository Scan):**
+
+```json
+{
+  "name": "google/crypto-sample",
+  "source_type": "GITHUB",
+  "repository_url": "https://github.com/google/crypto-sample",
+  "target_type": "REPOSITORY",
+  "mosca_params": {
+    "data_shelf_life_years_x": 10.0,
+    "quantum_threat_horizon_years_z": 10.0
+  }
+}
+```
+
+| Field | Type | Required | Description |
+| :--- | :--- | :---: | :--- |
+| `name` | string | No | Human-readable name (defaults to artifact name or `owner/repo`) |
+| `source_type` | enum | No | `UPLOAD` (default) or `GITHUB` |
+| `artifact_id` | UUID string | Conditional | Required if `source_type` is `UPLOAD` |
+| `repository_url` | string | Conditional | Required if `source_type` is `GITHUB` (`https://github.com/<owner>/<repo>`) |
+| `target_type` | enum | No | `REPOSITORY`, `CONTAINER_FS`, `BINARY`, `AUTO` (default: `AUTO`) |
+| `mosca_params` | object | No | Optional Mosca parameters (`data_shelf_life_years_x`, `migration_time_years_y`, `quantum_threat_horizon_years_z`) |
+
 **Response: `202 Accepted`**
 
 ```json
@@ -190,6 +208,8 @@ Initiate a new cryptographic analysis scan.
   "scan_id": "b2d93bc1-5678-4c28-98e3-b4c3e21199b0",
   "name": "Payment Service Audit Q4 2026",
   "artifact_id": "a1f93bc1-1234-4c28-98e3-a4c3e21199a0",
+  "source_type": "UPLOAD",
+  "source_url": null,
   "status": "QUEUED",
   "created_at": "2026-09-02T10:01:00Z",
   "started_at": null,

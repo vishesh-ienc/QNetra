@@ -196,6 +196,46 @@
   color: var(--text-quiet);
 }
 
+.rowSource {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+}
+
+.rowSource svg {
+  flex: none;
+  opacity: 0.8;
+}
+
+.sourceBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.sourceBadgeGeneric {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-micro);
+  font-weight: 500;
+  color: var(--text-tertiary);
+}
+
 /* Status row */
 .rowStatus {
   display: flex;

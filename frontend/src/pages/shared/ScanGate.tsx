@@ -30,6 +30,7 @@ import styles from './ScanGate.module.css';
 
 const STAGE_ORDER: PipelineStage[] = [
   'QUEUED',
+  'ACQUISITION',
   'DISCOVERY',
   'NORMALIZATION',
   'CLASSIFICATION',
@@ -58,6 +59,7 @@ function stageCompleted(stages: { name: string; status: string }[], stage: Pipel
 /* -------------------------------------------------------------------------- */
 
 const STAGE_NEED_LABEL: Partial<Record<PipelineStage, string>> = {
+  ACQUISITION:   'repository acquisition',
   DISCOVERY:     'cryptographic evidence discovery',
   NORMALIZATION: 'asset normalization',
   CLASSIFICATION:'asset classification',

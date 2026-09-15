@@ -582,6 +582,47 @@ Implemented `core/recommendation_engine/` with four components:
 
 ---
 
+### DEC-017 — Public GitHub Repository Scanning Architecture
+
+* **Date:** 2026-09-15
+* **Status:** Accepted
+* **Deciders:** Core Architecture & API Team
+
+#### Context
+Scanning cryptographic assets in software projects previously required users to manually download source code, zip the archive, and upload it to the `/artifacts/upload` endpoint. To streamline developer and security auditor workflows, QNetra requires the capability to directly scan public GitHub repositories by URL from the existing "New Scan" (`/scan`) interface.
+
+#### Constraints & Non-Goals
+* Strictly public repositories: no private repositories, OAuth, GitHub Apps, personal access tokens, webhooks, or multi-branch UI.
+* Single Pipeline Principle: Do NOT create a second scanning or intelligence pipeline. Cloned repositories must pass through the exact same analysis engines (Discovery -> Normalization -> Classification -> Risk -> Mosca -> PQC -> CBOM).
+* Safe subprocess execution: prevent shell injection, directory traversal, credential leaking, or lingering `.git` hooks.
+
+#### Decision
+1. **Acquisition Layer (`backend/github.py`):**
+   - URL Normalization & Validation: Enforces `https://github.com/<owner>/<repo>`, rejects dangerous shell characters and path traversal (`..`).
+   - Fast Pre-flight Check: Invokes `git ls-remote --exit-code -h <url>` with `GIT_TERMINAL_PROMPT=0` and `GIT_ASKPASS=echo` to confirm repository is public before launching background processing. Returns `GITHUB_REPO_INACCESSIBLE` (HTTP 400) if private or non-existent.
+   - Shallow Cloning: Executes `git clone --depth 1 --single-branch --no-tags <url> <dest>` into a dedicated session workspace.
+   - Metadata Hygiene: Cleans up `.git` directory post-clone with Windows read-only file attribute handlers.
+2. **First-Class Pipeline Stage (`ACQUISITION`):**
+   - For GitHub scans, `ACQUISITION` is prepended to the stage order (`['ACQUISITION', 'DISCOVERY', 'NORMALIZATION', ...]`).
+   - Recorded in `ScanRecord` and returned in `/api/v1/scans` responses, enabling the frontend timeline to visualize cloning progress in real time.
+3. **Pipeline Orchestration (`backend/pipeline.py`):**
+   - When `source_type == "GITHUB"`, pipeline executes `ACQUISITION`, sets `target_path = dest_dir`, and seamlessly transfers control to the standard `RepositoryScanner`.
+4. **Unified Frontend Interface (`/scan`):**
+   - Source selector (`Upload Artifact` | `GitHub Repository`) on `ScanPage`.
+   - Real-time client-side URL validation with descriptive format hints.
+   - Live scanning takeover display with GitHub badge and repository URL.
+   - Scan history displays source badges and GitHub repository links.
+
+#### Consequences
+* Positive: Zero duplicate analysis logic; all 7 downstream engines execute identically for uploaded archives and GitHub repositories.
+* Positive: High-performance shallow cloning minimizes network bandwidth and disk consumption.
+* Positive: Complete visibility across both backend stages and frontend UI timeline.
+
+#### Related Modules / Data Contracts
+* `backend/github.py`, `backend/pipeline.py`, `backend/routes/scans.py`, `backend/store.py`, `backend/serializers.py`, `frontend/src/pages/ScanPage.tsx`, `docs/06_API_AND_DATA_CONTRACTS.md`, `docs/10_API_CONTRACT.md`.
+
+---
+
 ## Decision Log Index
 
 | Decision ID | Title | Date | Status |
@@ -602,3 +643,5 @@ Implemented `core/recommendation_engine/` with four components:
 | **DEC-014** | Deterministic Cryptographic Risk Engine Architecture & Factor Model | 2026-09-04 | Accepted |
 | **DEC-015** | Mosca Engine Architecture: No-Fabrication X, Explicit Date, Risk Independence | 2026-09-04 | Accepted |
 | **DEC-016** | Recommendation Engine Architecture: Table-Driven Routing, Risk Independence, No-Fabrication | 2026-09-04 | Accepted |
+| **DEC-017** | Public GitHub Repository Scanning Architecture | 2026-09-15 | Accepted |
+

@@ -316,25 +316,36 @@ QNetra generates CBOMs compliant with the official **CycloneDX 1.6 Cryptography 
 
 ## 4. API Endpoints & Request/Response Contracts
 
-### 4.1. `POST /api/scan` — Initiate Scan
-* **Request Payload:**
+### 4.1. `POST /api/v1/scans` — Initiate Scan
+* **Request Payload (Upload Scan):**
 ```json
 {
-  "target_path": "c:/Users/VISHESH/Desktop/sample-repo",
-  "scan_options": {
-    "enable_ast": true,
-    "enable_manifests": true,
-    "enable_heuristics": true,
-    "exclude_patterns": ["node_modules", "venv", ".git"]
-  },
+  "name": "Payment Service Audit Q4 2026",
+  "source_type": "UPLOAD",
+  "artifact_id": "a1f93bc1-1234-4c28-98e3-a4c3e21199a0",
+  "target_type": "REPOSITORY",
   "mosca_params": {
-    "data_shelf_life_x": 10,
-    "migration_time_y": 3,
-    "quantum_threat_horizon_z": 8
+    "data_shelf_life_years_x": 10.0,
+    "migration_time_years_y": 3.0,
+    "quantum_threat_horizon_years_z": 8.0
   }
 }
 ```
-* **Response (200 OK):** Complete `ScanResultEnvelope` containing assets, CBOM, risk, Mosca, and recommendation payloads.
+
+* **Request Payload (Public GitHub Repository Scan):**
+```json
+{
+  "name": "google/crypto-sample",
+  "source_type": "GITHUB",
+  "repository_url": "https://github.com/google/crypto-sample",
+  "target_type": "REPOSITORY",
+  "mosca_params": {
+    "data_shelf_life_years_x": 10.0,
+    "quantum_threat_horizon_years_z": 10.0
+  }
+}
+```
+* **Response (202 Accepted):** Initial `Scan` object with `status: "QUEUED"`, `source_type`, and stages initialized (including `ACQUISITION` as stage 1 for GitHub scans).
 
 ---
 

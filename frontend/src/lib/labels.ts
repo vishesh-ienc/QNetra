@@ -288,6 +288,7 @@ export const confidenceLevelLabel: Record<string, string> = {
 
 export const stageLabel: Record<string, string> = {
   QUEUED: 'Queued',
+  ACQUISITION: 'Repository acquisition',
   DISCOVERY: 'Discovery',
   NORMALIZATION: 'Normalization',
   CLASSIFICATION: 'Classification',
@@ -299,6 +300,7 @@ export const stageLabel: Record<string, string> = {
 };
 
 export const stageQuestion: Record<string, string> = {
+  ACQUISITION: 'How do we retrieve the remote repository code safely?',
   DISCOVERY: 'What cryptographic evidence exists in the target?',
   NORMALIZATION: 'Which distinct cryptographic assets does that evidence describe?',
   CLASSIFICATION: 'What kind of cryptography is each asset, and what threat applies?',
@@ -315,7 +317,8 @@ export const stageQuestion: Record<string, string> = {
  */
 export const stageActivity: Record<string, string> = {
   QUEUED:        'Waiting for the pipeline to start.',
-  DISCOVERY:     'Searching source files, binaries, packages and configuration for cryptographic usage.',
+  ACQUISITION:   'Acquiring repository from GitHub…',
+  DISCOVERY:     'Discovering cryptographic usage…',
   NORMALIZATION: 'Combining scanner findings into canonical cryptographic assets.',
   CLASSIFICATION:'Evaluating algorithm strength, quantum vulnerability and security parameters.',
   RISK_ANALYSIS: 'Evaluating algorithm strength, parameters and application criticality.',
@@ -334,9 +337,13 @@ export function stageOutcomeSummary(
   stageName: string,
   progress: { raw_findings_count?: number | null; assets_count?: number | null },
 ): string | null {
+  if (stageName === 'ACQUISITION') {
+    return 'Repository acquired';
+  }
   if (stageName === 'DISCOVERY') {
     const n = progress.raw_findings_count;
-    if (n != null && n > 0) return `${n.toLocaleString('en-US')} findings discovered`;
+    if (n != null && n > 0) return `${n.toLocaleString('en-US')} cryptographic findings discovered`;
+    return 'Cryptographic discovery complete';
   }
   if (stageName === 'NORMALIZATION' || stageName === 'CLASSIFICATION') {
     const n = progress.assets_count;
