@@ -58,12 +58,12 @@
   --unknown-border: rgba(107, 116, 128, 0.28);
 
   /* --- Typography ------------------------------------------------------- */
-  --font-sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+  --font-sans: "IBM Plex Sans Variable", "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
     Consolas, "Liberation Mono", monospace;
 
-  --text-display: 2.75rem;   /* 44px — one per page, at most */
+  --text-display: 2.5rem;   /* 40px — one per page, at most */
   --text-h1: 1.75rem;        /* 28px */
   --text-h2: 1.25rem;        /* 20px */
   --text-h3: 1rem;           /* 16px */

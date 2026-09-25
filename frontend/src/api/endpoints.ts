@@ -53,22 +53,23 @@ export interface Artifact {
 }
 
 export interface ExportedFile {
+  blob: Blob;
   content: string;
   filename: string;
   mediaType: string;
 }
 
 /**
- * File-download endpoints (docs/10 §10, §15) return a raw stream, not a JSON
+ * File-download endpoints return a raw binary/text stream, not a JSON
  * envelope, so they bypass the generic `request()` helper. Only meaningful in
  * live mode: the mock dataset speaks the JSON contract, not the file-download
  * contract.
  */
-async function fetchExportedFile(path: string, notice: string): Promise<ExportedFile> {
+async function fetchExportedFile(path: string, notice: string, init?: RequestInit): Promise<ExportedFile> {
   if (API_MODE !== 'live') {
     throw new NotImplementedByBackendError(notice);
   }
-  const response = await fetch(`${API_BASE_URL}${path}`);
+  const response = await fetch(`${API_BASE_URL}${path}`, init);
   if (!response.ok) {
     const payload = await response.json().catch(() => null);
     throw new ApiError(
@@ -79,8 +80,10 @@ async function fetchExportedFile(path: string, notice: string): Promise<Exported
   }
   const disposition = response.headers.get('content-disposition') ?? '';
   const match = /filename="?([^";]+)"?/.exec(disposition);
+  const blob = await response.blob();
   return {
-    content: await response.text(),
+    blob,
+    content: '',
     filename: match?.[1] ?? 'download',
     mediaType: response.headers.get('content-type') ?? 'application/octet-stream',
   };
@@ -89,12 +92,11 @@ async function fetchExportedFile(path: string, notice: string): Promise<Exported
 function exportCbom(scanId: string, format: 'json' | 'xml'): Promise<ExportedFile> {
   return fetchExportedFile(
     `/scans/${scanId}/cbom/export?format=${format}`,
-    'CBOM file export requires the live QNetra API. Set VITE_API_MODE=live and start the ' +
-      "backend, or use the CBOM view's in-browser JSON download in the meantime.",
+    'CBOM file export requires the live QNetra API. Set VITE_API_MODE=live and start the backend.',
   );
 }
 
-/** Server-composed exports (docs/10 §15): the full envelope, the asset-inventory CSV, or PDF. */
+/** Legacy server-composed exports. */
 function exportScan(scanId: string, format: 'json' | 'csv' | 'pdf'): Promise<ExportedFile> {
   return fetchExportedFile(
     `/scans/${scanId}/export?format=${format}`,
@@ -102,9 +104,65 @@ function exportScan(scanId: string, format: 'json' | 'csv' | 'pdf'): Promise<Exp
   );
 }
 
+function exportExecutiveReport(scanId: string): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/executive`,
+    'Executive assessment export requires the live QNetra API.',
+  );
+}
+
+function exportMigrationReport(scanId: string, format: 'pdf' | 'csv' | 'json'): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/migration?format=${format}`,
+    'PQC migration plan export requires the live QNetra API.',
+  );
+}
+
+function exportTechnicalReport(scanId: string): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/technical`,
+    'Complete technical report export requires the live QNetra API.',
+  );
+}
+
+function exportCryptoAssets(scanId: string, format: 'csv' | 'json'): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/assets?format=${format}`,
+    'Crypto assets export requires the live QNetra API.',
+  );
+}
+
+function exportEvidenceFindings(scanId: string, format: 'csv' | 'json'): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/findings?format=${format}`,
+    'Evidence & findings export requires the live QNetra API.',
+  );
+}
+
+function exportCustomReport(
+  scanId: string,
+  body: { sections: string[]; format: 'pdf' | 'json' | 'csv' }
+): Promise<ExportedFile> {
+  return fetchExportedFile(
+    `/scans/${scanId}/reports/custom`,
+    'Custom export requires the live QNetra API.',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }
+  );
+}
+
 export const api = {
   exportCbom,
   exportScan,
+  exportExecutiveReport,
+  exportMigrationReport,
+  exportTechnicalReport,
+  exportCryptoAssets,
+  exportEvidenceFindings,
+  exportCustomReport,
   uploadArtifact: (file: File, name?: string) => {
     const form = new FormData();
     form.append('file', file);

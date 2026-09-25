@@ -122,32 +122,44 @@ def test_verify_public_repo_timeout():
 def test_acquire_github_repository_success(tmp_path):
     scan_id = "test-scan-123"
 
-    def fake_clone(cmd, **kwargs):
-        dest = Path(cmd[-1])
-        dest.mkdir(parents=True, exist_ok=True)
-        # Create a sample file and a .git dir
-        (dest / "crypto.py").write_text("import hashlib\nhashlib.sha256(b'test')\n")
-        git_dir = dest / ".git"
-        git_dir.mkdir()
-        (git_dir / "config").write_text("[core]\n")
+    def fake_git_v6(cmd, **kwargs):
+        """v6.0 two-phase sparse-checkout mock (clone, sparse-checkout, checkout)."""
+        subcommand = next(
+            (p for p in cmd if p in ("clone", "sparse-checkout", "checkout")), ""
+        )
+        if subcommand == "clone":
+            # Phase 1: blobless clone creates dest + .git only, no working-tree files.
+            dest = Path(cmd[-1])
+            dest.mkdir(parents=True, exist_ok=True)
+            git_dir = dest / ".git"
+            git_dir.mkdir(exist_ok=True)
+            (git_dir / "config").write_text("[core]\n")
+            return MagicMock(returncode=0, stdout="", stderr="")
+        if subcommand == "sparse-checkout":
+            # Phase 2a (init) and 2b (set): no-op in mock.
+            return MagicMock(returncode=0, stdout="", stderr="")
+        if subcommand == "checkout":
+            # Phase 2c: populate working tree; dest is argv[2] (git -C <dest> checkout HEAD).
+            dest = Path(cmd[2])
+            (dest / "crypto.py").write_text("import hashlib\nhashlib.sha256(b'test')\n")
+            return MagicMock(returncode=0, stdout="", stderr="")
         return MagicMock(returncode=0, stdout="", stderr="")
 
-    with patch("backend.github.subprocess.run", side_effect=fake_clone):
+    with patch("backend.github.subprocess.run", side_effect=fake_git_v6):
         dest_dir = acquire_github_repository("https://github.com/owner/sample-repo", scan_id)
         assert dest_dir.exists()
         assert (dest_dir / "crypto.py").exists()
-        # .git should have been removed
+        # .git should have been removed after acquisition
         assert not (dest_dir / ".git").exists()
-
-        # Clean up
         shutil.rmtree(dest_dir, ignore_errors=True)
 
 
 def test_acquire_github_repository_failure():
     scan_id = "test-scan-fail"
     with patch("backend.github.subprocess.run") as mock_run:
+        # v6.0: Phase 1 (blobless clone) fails — error now prefixed with "Phase 1"
         mock_run.return_value = MagicMock(returncode=128, stdout="", stderr="fatal: clone failed")
-        with pytest.raises(RuntimeError, match="Failed to clone repository"):
+        with pytest.raises(RuntimeError, match="Phase 1"):
             acquire_github_repository("https://github.com/owner/fail-repo", scan_id)
 
 
@@ -159,20 +171,55 @@ def test_acquire_github_repository_failure():
 def test_create_scan_github_lifecycle(tmp_path):
     client = TestClient(app)
 
-    # Mock accessibility check and clone
-    def fake_clone(cmd, **kwargs):
-        dest = Path(cmd[-1])
-        # Copy samples/repository_samples into dest to run real pipeline
-        if dest.exists():
-            shutil.rmtree(dest, ignore_errors=True)
-        shutil.copytree(SAMPLES, dest)
-        git_dir = dest / ".git"
-        git_dir.mkdir(exist_ok=True)
+    # Mock both verify (git ls-remote) and clone (git clone) calls.
+    # verify_public_repo now runs in the background pipeline thread, so
+    # subprocess.run handles both commands sequentially.
+    def fake_git_subprocess(cmd, **kwargs):
+        """Handle all git subcommands used by the v6.0 two-phase sparse-checkout."""
+        # Determine the git subcommand
+        # cmd may be: ["git", "-c", ..., "clone", ...] or ["git", "-C", dest, "sparse-checkout", ...]
+        subcommand = ""
+        for i, part in enumerate(cmd):
+            if part in ("ls-remote", "clone", "sparse-checkout", "checkout"):
+                subcommand = part
+                break
+
+        if subcommand == "ls-remote":
+            return MagicMock(returncode=0, stdout="abc123\trefs/heads/main", stderr="")
+
+        if subcommand == "clone":
+            # Phase 1: blobless clone with --no-checkout.
+            # cmd[-1] is the destination directory; create it with .git dir.
+            dest = Path(cmd[-1])
+            if dest.exists():
+                shutil.rmtree(dest, ignore_errors=True)
+            dest.mkdir(parents=True, exist_ok=True)
+            git_dir = dest / ".git"
+            git_dir.mkdir(exist_ok=True)
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        if subcommand == "sparse-checkout":
+            # Phase 2a (init) and 2b (set): no-ops in the mock.
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        if subcommand == "checkout":
+            # Phase 2c: populate working tree from SAMPLES fixture.
+            # Destination is in cmd: ["git", "-C", dest_str, "checkout", "HEAD"]
+            dest = Path(cmd[2])
+            # Copy fixture files into dest (simulating checked-out source)
+            for src in SAMPLES.rglob("*"):
+                if src.is_file():
+                    rel = src.relative_to(SAMPLES)
+                    target = dest / rel
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src, target)
+            return MagicMock(returncode=0, stdout="", stderr="")
+
+        # Unknown subcommand — succeed silently
         return MagicMock(returncode=0, stdout="", stderr="")
 
     with (
-        patch("backend.routes.scans.verify_public_repo", return_value=(True, "")),
-        patch("backend.github.subprocess.run", side_effect=fake_clone),
+        patch("backend.github.subprocess.run", side_effect=fake_git_subprocess),
     ):
         res = client.post(
             "/api/v1/scans",
@@ -219,11 +266,18 @@ def test_create_scan_github_lifecycle(tmp_path):
 
 
 def test_create_scan_github_inaccessible():
+    """Inaccessible repos now surface as a FAILED scan (async), not a 400 response."""
     client = TestClient(app)
-    with patch(
-        "backend.routes.scans.verify_public_repo",
-        return_value=(False, "Repository is private or requires authentication."),
-    ):
+
+    def fake_ls_remote(cmd, **kwargs):
+        """Simulate git ls-remote returning auth failure."""
+        return MagicMock(
+            returncode=128,
+            stdout="",
+            stderr="fatal: Authentication failed for 'https://github.com/private/repo'",
+        )
+
+    with patch("backend.github.subprocess.run", side_effect=fake_ls_remote):
         res = client.post(
             "/api/v1/scans",
             json={
@@ -231,10 +285,26 @@ def test_create_scan_github_inaccessible():
                 "repository_url": "https://github.com/private/repo",
             },
         )
-        assert res.status_code == 400
+        # Route now returns 202 immediately (verification happens in background)
+        assert res.status_code == 202
         data = res.json()
-        assert data["error"]["code"] == "GITHUB_REPO_INACCESSIBLE"
-        assert "private or requires authentication" in data["error"]["message"]
+        scan_id = data["scan_id"]
+
+        # Poll until the scan fails
+        for _ in range(50):
+            status_res = client.get(f"/api/v1/scans/{scan_id}")
+            assert status_res.status_code == 200
+            scan_data = status_res.json()
+            if scan_data["status"] in ("COMPLETED", "PARTIAL", "FAILED"):
+                assert scan_data["status"] == "FAILED", f"Expected FAILED, got {scan_data['status']}"
+                # The inaccessible error message should appear in the scan errors
+                assert any(
+                    "private" in e.lower() or "authentication" in e.lower() or "accessible" in e.lower()
+                    for e in scan_data.get("errors", [])
+                ), f"Expected auth error in errors: {scan_data.get('errors')}"
+                break
+        else:
+            pytest.fail("Scan did not transition to FAILED within polling limit")
 
 
 def test_create_scan_github_missing_url():
@@ -282,7 +352,10 @@ def test_pipeline_github_workspace_cleanup(tmp_path):
         source_url="https://github.com/org/dummy_repo",
     )
 
-    with patch("backend.github.acquire_github_repository", return_value=cloned_dir):
+    with (
+        patch("backend.github.verify_public_repo", return_value=(True, "")),
+        patch("backend.github.acquire_github_repository", return_value=cloned_dir),
+    ):
         run_pipeline(
             scan,
             data_shelf_life_years_x=10.0,

@@ -34,7 +34,7 @@ export const NAV: NavGroup[] = [
     unlabeled: true,
     items: [
       {
-        to: '/',
+        to: '/posture',
         label: 'Cryptographic Posture',
         question: 'What is the cryptographic security posture of this target?',
         needsResults: true,

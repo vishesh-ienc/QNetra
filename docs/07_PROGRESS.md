@@ -158,7 +158,16 @@ Current focus: static audit and UX polish.
   * Reports & Exports center with JSON/CSV/XML/full-envelope downloads
   * Scan History page with historical scan restoration
   * Static audit: all nav/heading labels consistent, all state guards verified
-* **Milestone 5:** End-to-end testing, PDF report generation, presentation polish.
+* **Milestone 5 (Complete ✅):** Enterprise Reports & Exports Redesign (Export Center)
+  * Decoupled Report Data Layer (`backend/reports/data.py`) reading existing scan data with zero recalculation
+  * Enterprise ReportLab PDF Subsystem (`backend/reports/pdf.py`) with running headers/footers, Page X of Y (`NumberedCanvas`), and clean typography
+  * Executive Cryptographic Assessment (PDF) for CISOs/leadership
+  * PQC Migration Plan (PDF, CSV, JSON) with NIST FIPS 203/204/205 roadmap
+  * Complete Technical Report (PDF) covering all 14 assessment sections
+  * Dedicated CSV/JSON serializers for Crypto Assets, Evidence & Findings, and Custom Exports
+  * Custom Export Center with multi-domain selection, format validation, and safety controls
+  * 13 new report tests (580 passed, 0 failures, 100% active pass rate)
+  * Redesigned React `/reports` page with persona-based sections, scan banner, and custom export matrix
 
 ---
 
@@ -166,6 +175,9 @@ Current focus: static audit and UX polish.
 
 | Timestamp (ISO) | Author | Change Summary | Affected Files |
 | :--- | :--- | :--- | :--- |
+| 2026-09-24T12:00:00 | AI Agent | Sub-60s Dynamic Pipeline & Live Discovery Streaming: Diagnosed root cause of 150s OpenSSL scan (sparse cone checkout timeout took 71s in acquisition + fixed 50s analysis budget took 78s in discovery without live progress callbacks). Implemented direct single-pass shallow filtered clone (32s), dynamic discovery budget adapting to acquisition time (sub-60s total guarantee), live progress callback every 5 files to scan.files_scanned and scan.findings, and frontend dynamic activity text. All 596 tests passed, frontend build clean in 511ms. | `backend/github.py`, `backend/pipeline.py`, `scanners/framework/models.py`, `scanners/repository/scanner.py`, `frontend/src/pages/ScanPage.tsx`, `current_prompt_update.md`, `docs/07_PROGRESS.md` |
+| 2026-09-24T09:25:00 | AI Agent | Sub-60s Pipeline & 0-Findings Bug Resolution: Diagnosed root cause of 0 findings (safe_read_text received max_bytes=0 which resulted in Python fh.read(0) yielding empty strings across all files). Fixed safe_read_text to safely guard against max_bytes <= 0 with 5MB fallback, updated scanner.py fallback, optimized traversal with topdown=True directory pruning and O(1) exclusion frozenset, verified 14,592 findings and 11,291 assets in 35.31s total pipeline time on full OpenSSL repository (596 tests passed). | `scanners/utils/file_traversal.py`, `scanners/repository/scanner.py`, `backend/pipeline.py`, `backend/github.py`, `current_prompt_update.md`, `docs/07_PROGRESS.md` |
+| 2026-09-15T11:40:00 | AI Agent | Reports & Exports Redesign (Export Center): added `backend/reports/` with ReportData extraction, ReportLab 5.0.1 PDF generator (NumberedCanvas, executive, migration, technical, custom), structured CSV/JSON serializers, `backend/routes/reports.py` router (`/reports/executive`, `/reports/migration`, `/reports/technical`, `/reports/assets`, `/reports/findings`, `/reports/custom`), backward compatibility for `/export?format=pdf`, frontend Export Center with scan banner, recommended reports, data exports, complete assessment, and custom export matrix, 13 new tests (580 passed, 1 skipped) | `backend/reports/*`, `backend/routes/reports.py`, `backend/routes/exports.py`, `backend/main.py`, `backend/tests/test_reports.py`, `backend/tests/test_export.py`, `frontend/src/*`, `requirements.txt`, `docs/*` |
 | 2026-09-15T11:05:00 | AI Agent | Public GitHub Repository Scanning: added `backend/github.py` with URL normalization, non-blocking pre-flight accessibility check, shallow cloning into isolated workspace, automatic workspace cleanup in pipeline `finally:`, aligned error messages, UI source segmented selector (`New Scan` -> `[ Upload Files ]` / `[ GitHub Repository ]` -> `[ Scan Repository ]`), real-time technical metadata grid, Scan History source distinction, 14 new tests (567 passed, 0 failed, DEC-017) | `backend/github.py`, `backend/pipeline.py`, `backend/routes/scans.py`, `backend/store.py`, `backend/serializers.py`, `backend/tests/test_github_acquisition.py`, `frontend/src/*`, `docs/*` |
 | 2026-09-04T17:25:00 | AI Agent | Phase 3.3 Corrective Pass: Introduced `CLASSICAL_UPGRADE` recommendation type, remapped classical strengthenings (hashes, symmetric ciphers, classically broken), added 14 new tests (118 engine tests, 526 total passing) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_status.md`, `current_prompt_update.md` |
 | 2026-09-04T15:17:00 | AI Agent | Implemented Phase 3 Milestone 3.3: NIST PQC Recommendation Engine (models, knowledge, mapper, engine, __init__, 104 tests, 512 total passing, 93% coverage, DEC-016) | `core/recommendation_engine/*`, `tests/test_core/test_recommendation_engine.py`, `docs/*`, `PROJECT_CONTEXT.md`, `current_prompt_update.md` |
@@ -181,5 +193,5 @@ Current focus: static audit and UX polish.
 
 ---
 
-**Last Updated:** 2026-09-14T00:37:00+05:30
+**Last Updated:** 2026-09-15T11:40:00+05:30
 

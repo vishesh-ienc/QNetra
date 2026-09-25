@@ -209,7 +209,7 @@ export function ScanPage() {
   useEffect(() => {
     if (!hasResults || redirectedRef.current) return;
     redirectedRef.current = true;
-    const id = setTimeout(() => navigate('/'), 500);
+    const id = setTimeout(() => navigate('/posture'), 500);
     return () => clearTimeout(id);
   }, [hasResults, navigate]);
 
@@ -294,6 +294,8 @@ export function ScanPage() {
     if (scan.source_type === 'GITHUB') {
       if (currentStage === 'ACQUISITION') {
         dynamicActivity = 'Acquiring repository from GitHub…';
+      } else if (currentStage === 'DISCOVERY' && (filesScanned ?? 0) > 0) {
+        dynamicActivity = `Analyzing cryptographic usage across source files (${filesScanned} files analyzed)…`;
       } else if (currentStage === 'DISCOVERY' && isAcquisitionComplete) {
         dynamicActivity = 'Repository acquired. Starting cryptographic discovery…';
       } else if (currentStage === 'DISCOVERY') {
@@ -390,6 +392,28 @@ export function ScanPage() {
                 <span className={styles.liveCounterLabel}>Assets</span>
               </div>
             )}
+            {(p.lines_analyzed ?? 0) > 0 && (
+              <div className={styles.liveCounter}>
+                <span className={`${styles.liveCounterValue} numeric`}>
+                  {formatNumber(p.lines_analyzed!)}
+                </span>
+                <span className={styles.liveCounterLabel}>Lines analyzed</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Partial scan notice — shown as soon as is_partial is set (large repos) */}
+        {(scan.is_partial || p.is_partial) && (
+          <div className={styles.partialBanner} role="note" aria-label="Partial scan notice">
+            <span className={styles.partialBannerIcon} aria-hidden="true">⚡</span>
+            <div className={styles.partialBannerText}>
+              <span className={styles.partialBannerTitle}>Priority-first scan</span>
+              <span className={styles.partialBannerReason}>
+                {scan.partial_reason || p.partial_reason ||
+                  'This repository is large — QNetra is analyzing the highest-priority cryptographic files first to stay within the interactive scan budget.'}
+              </span>
+            </div>
           </div>
         )}
 

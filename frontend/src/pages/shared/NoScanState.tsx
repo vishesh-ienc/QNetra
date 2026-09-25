@@ -19,7 +19,10 @@ export function NoScanState({ scanRunning = false }: { scanRunning?: boolean }) 
     );
   }
 
-  if (error) {
+  const is404 = (error as unknown as { status?: number; code?: string })?.status === 404 ||
+    (error as unknown as { status?: number; code?: string })?.code === 'SCAN_NOT_FOUND';
+
+  if (error && !is404) {
     return (
       <>
         <PageHeader
@@ -69,14 +72,15 @@ export function NoScanState({ scanRunning = false }: { scanRunning?: boolean }) 
         lede="QNetra analyses a target and turns what it finds into a cryptographic inventory, a risk assessment, and a migration plan. Start by running a scan."
       />
       <EmptyState
-        title="Nothing to show yet"
+        title="You haven't started a scan yet"
         description={
           API_MODE === 'mock'
             ? 'The QNetra API service is not running, so no scans could be listed.'
-            : 'No scans have been created for this instance. Upload an artifact to begin.'
+            : 'No scans have been run for this instance yet. Upload an artifact or provide a repository to begin discovery.'
         }
         action={<Link to="/scan">Start a scan →</Link>}
       />
     </>
   );
 }
+

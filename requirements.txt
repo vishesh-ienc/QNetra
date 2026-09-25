@@ -6,5 +6,8 @@ pydantic>=2.0.0
 # Decision: lief chosen over pefile for multi-format ELF + PE support (see DEC-007)
 lief>=0.14.0
 
+# PDF generation for executive, migration, and technical reports
+reportlab>=4.0.0
+
 # HTTP client for future container registry support (not used in MVP, forward-compat)
 # requests>=2.31.0   # Uncomment when container registry scanning is added

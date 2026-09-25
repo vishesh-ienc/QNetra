@@ -125,8 +125,7 @@
   height: 16px;
   border-radius: 50%;
   background: var(--accent);
-  border: 3px solid var(--surface-1);
-  box-shadow: 0 0 0 1px var(--accent-quiet);
+  border: 2px solid var(--surface-1);
   transition: transform var(--dur-fast) var(--ease);
 }
 

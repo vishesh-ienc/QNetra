@@ -24,7 +24,9 @@ def test_csv_export_has_one_row_per_asset(completed_scan, client):
     assert rows[0]["risk_score"]
 
 
-def test_pdf_export_is_honestly_not_implemented(completed_scan, client):
+def test_pdf_export_returns_technical_report_pdf(completed_scan, client):
     r = client.get(f"/api/v1/scans/{completed_scan}/export", params={"format": "pdf"})
-    assert r.status_code == 501
-    assert r.json()["error"]["code"] == "NOT_IMPLEMENTED"
+    assert r.status_code == 200
+    assert r.headers["content-type"] == "application/pdf"
+    assert r.content.startswith(b"%PDF")
+    assert len(r.content) > 1000

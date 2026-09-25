@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppShell } from './components/layout/AppShell';
+import { LandingPage } from './pages/LandingPage';
 import { CommandCenter } from './pages/CommandCenter';
 import { ScanPage } from './pages/ScanPage';
 import { ScanHistoryPage } from './pages/ScanHistoryPage';
@@ -16,7 +17,8 @@ export function App() {
   return (
     <Routes>
       <Route element={<AppShell />}>
-        <Route index element={<CommandCenter />} />
+        <Route index element={<LandingPage />} />
+        <Route path="posture" element={<CommandCenter />} />
         <Route path="scan" element={<ScanPage />} />
         <Route path="history" element={<ScanHistoryPage />} />
         <Route path="assets" element={<AssetsPage />} />

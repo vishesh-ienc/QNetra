@@ -59,6 +59,16 @@ export function formatDuration(seconds: number | null | undefined): string {
   return `${minutes}m ${Math.round(seconds % 60)}s`;
 }
 
+/** Best display name for a scan: user-supplied name -> target name -> scan ID prefix. */
+export function scanDisplayName(scan: {
+  name?: string | null;
+  target?: { name?: string | null } | null;
+  scan_id: string;
+}): string {
+  return scan.name ?? scan.target?.name ?? scan.scan_id.slice(0, 8);
+}
+
+
 /** Splits a path into a directory prefix and a file name for two-tone rendering. */
 export function splitPath(filePath: string): { dir: string; file: string } {
   const index = filePath.lastIndexOf('/');

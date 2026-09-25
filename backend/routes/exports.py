@@ -58,11 +58,15 @@ def export_scan(scan_id: str, format: str = Query("json", pattern="^(json|csv|pd
         raise scan_not_found(scan_id)
 
     if format == "pdf":
-        raise ApiError(
-            501,
-            "NOT_IMPLEMENTED",
-            "No engine in core/ generates report prose or page layout. Producing a PDF here "
-            "would author a document the pipeline never produced, so it is not implemented.",
+        from backend.reports.data import extract_report_data
+        from backend.reports.pdf import build_technical_pdf
+
+        data = extract_report_data(scan)
+        pdf_bytes = build_technical_pdf(data)
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="qnetra-report-{scan_id}.pdf"'},
         )
 
     if format == "json":

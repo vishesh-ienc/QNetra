@@ -124,6 +124,10 @@ export interface ScanProgress {
   files_errored: number | null;
   raw_findings_count: number | null;
   assets_count: number | null;
+  bytes_read?: number | null;
+  lines_analyzed?: number | null;
+  is_partial?: boolean | null;
+  partial_reason?: string | null;
 }
 
 export interface NormalizationStatistics {
@@ -171,6 +175,12 @@ export interface Scan {
   normalization: NormalizationStatistics | null;
   errors: string[];
   warnings: string[];
+  // Adaptive Scanning Engine v2.0 — partial scan metadata
+  is_partial?: boolean | null;
+  partial_reason?: string | null;
+  bytes_read?: number | null;
+  lines_analyzed?: number | null;
+  performance_metrics?: Record<string, number> | null;
 }
 
 /* -------------------------------------------------------------------------- */

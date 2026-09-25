@@ -132,6 +132,14 @@ def scan_dict(scan: ScanRecord) -> dict[str, Any]:
         "normalization": scan.normalization_stats,
         "errors": scan.errors,
         "warnings": scan.warnings,
+        # Partial scan metadata (Adaptive Scanning Engine v2.0)
+        "is_partial": scan.is_partial,
+        "partial_reason": scan.partial_reason,
+        # Extended I/O telemetry
+        "bytes_read": scan.bytes_read,
+        "lines_analyzed": scan.lines_analyzed,
+        # Per-stage wall-clock times (engineering telemetry — not shown in main UI)
+        "performance_metrics": scan.performance_metrics if scan.performance_metrics else None,
     }
 
 
@@ -144,6 +152,10 @@ def progress_dict(scan: ScanRecord) -> dict[str, Any]:
         "files_scanned": scan.files_scanned,
         "raw_findings_count": len(scan.findings),
         "assets_count": len(scan.assets),
+        "bytes_read": scan.bytes_read,
+        "lines_analyzed": scan.lines_analyzed,
+        "is_partial": scan.is_partial,
+        "partial_reason": scan.partial_reason,
     }
 
 

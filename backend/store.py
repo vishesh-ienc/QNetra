@@ -134,6 +134,17 @@ class ScanRecord:
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
+    # Partial scan metadata (Adaptive Scanning Engine v2.0)
+    is_partial: bool = False
+    partial_reason: Optional[str] = None
+
+    # Per-stage wall-clock telemetry (internal engineering metrics)
+    performance_metrics: dict[str, float] = field(default_factory=dict)
+
+    # Extended I/O metrics
+    bytes_read: int = 0
+    lines_analyzed: int = 0
+
     lock: threading.Lock = field(default_factory=threading.Lock)
 
     @property

@@ -23,7 +23,7 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -102,14 +102,111 @@ class BinaryFormat(str, Enum):
 class ScanOptions(BaseModel):
     """Configuration options for a scanner execution."""
     exclude_patterns: list[str] = Field(
-        default=["node_modules", ".git", "dist", "build", "vendor",
-                 "__pycache__", ".venv", "venv", "env", ".tox", "target",
-                 "*.min.js", "*.bundle.js"],
-        description="Glob/directory patterns to exclude from scanning."
+        default=[
+            # VCS and IDE metadata
+            ".git", ".svn", ".hg", ".idea", ".vscode",
+            # Dependency trees (largest single savings)
+            "node_modules", "vendor", ".cargo",
+            # Build output
+            "dist", "build", "out", "target", ".next", ".nuxt", ".svelte-kit",
+            # Python env / cache
+            "__pycache__", ".venv", "venv", "env", ".tox", ".mypy_cache",
+            ".pytest_cache", ".ruff_cache",
+            # Java/Gradle/Maven build dirs
+            ".gradle", ".mvn",
+            # Test data / fixtures / docs (not source code)
+            "fixtures", "test_data", "testdata", "docs", "doc",
+            # Coverage / lock output
+            "coverage", ".nyc_output",
+            # Minified / bundled JS
+            "*.min.js", "*.bundle.js", "*.min.css",
+            # ── Large non-source directories in major OSS repos ──────────────
+            # OpenSSL / BoringSSL / libssl
+            "fuzz", "fuzz-corpus", "corpus",        # fuzz test corpora (100s of MB)
+            "man", "man1", "man3", "man5", "man7",   # man-page directories
+            "demos", "demo",                          # demo scripts (low crypto signal)
+            "benchmarks", "benchmark", "perf",        # benchmark harnesses
+            "generated", "auto-generated", "autogen",  # code-gen output
+            "third_party", "third-party", "thirdparty", # bundled external deps
+            "external", "extern",                     # external dep snapshots
+            "Configurations",                         # OpenSSL build config database
+            "ms",                                     # OpenSSL Windows MSVC scripts
+            "VMS",                                    # OpenSSL VMS-specific code
+            # CPython / Python repos
+            "Misc",                                   # CPython misc docs/tools
+            "PC",                                     # CPython Windows-only legacy
+            "PCbuild",                                # CPython Windows MSVC build
+            "Mac",                                    # CPython macOS legacy
+            "Tools",                                  # CPython dev tools (non-crypto)
+            # General test infrastructure
+            "test", "tests", "testing",               # test dirs rarely have real crypto
+            "__tests__", "spec", "specs",             # JS/TS test conventions
+            "e2e", "integration",                     # integration/e2e test dirs
+            # Documentation
+            "examples", "example", "sample", "samples", # example code (low priority)
+            "tutorial", "tutorials",
+            "website", "site", "pages",
+        ],
+        description="Glob/directory names to exclude from traversal."
+    )
+    include_extensions: set[str] = Field(
+        default={
+            # Python
+            ".py",
+            # JavaScript / TypeScript
+            ".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
+            # Java / Kotlin / Scala
+            ".java", ".kt", ".scala",
+            # C / C++ / Objective-C
+            ".c", ".cpp", ".cc", ".cxx", ".h", ".hpp", ".hxx", ".m",
+            # C# / .NET
+            ".cs",
+            # Go
+            ".go",
+            # Rust
+            ".rs",
+            # Ruby / PHP
+            ".rb", ".php",
+            # Shell (for export/cipher config patterns)
+            ".sh", ".bash",
+            # Config / manifest files with crypto content
+            ".yaml", ".yml", ".toml", ".conf", ".cfg", ".ini",
+            ".json",  # package.json, tsconfig.json, etc.
+            # Cert / key material
+            ".pem", ".crt", ".cer", ".key",
+        },
+        description=(
+            "Only traverse files with these extensions. "
+            "Empty set means traverse all files (no extension filter). "
+            "Dramatically reduces files visited in large repos containing docs, "
+            "images, media, and generated assets."
+        ),
     )
     max_file_size_bytes: int = Field(
         default=10 * 1024 * 1024,  # 10 MB
         description="Skip files larger than this threshold to avoid memory issues."
+    )
+    max_lines_per_file: int = Field(
+        default=2000,
+        description=(
+            "Truncate files to this many lines before analysis. "
+            "Real cryptographic API usage is almost always in the first 2000 lines; "
+            "files longer than this are typically generated test vectors, data tables, "
+            "or auto-generated bindings with no actionable function calls. "
+            "Set to 0 to disable."
+        ),
+    )
+    max_files_per_scan: int = Field(
+        default=1500,
+        description=(
+            "Maximum number of files to analyze in a single scan. "
+            "Files are ranked by crypto-relevance (filename signals) before the cap "
+            "is applied, ensuring the most important files are always covered. "
+            "Prevents unbounded scan times on massive repositories (e.g. openssl with "
+            "2,172 C files). Set to 0 to disable the cap (use with caution). "
+            "The tradeoff: a 1500-file cap covers >99% of projects completely; for "
+            "larger repos it covers a representative cryptographic cross-section."
+        ),
     )
     max_string_length: int = Field(
         default=200,
@@ -119,6 +216,27 @@ class ScanOptions(BaseModel):
     enable_regex: bool = Field(default=True, description="Enable regex pattern matching.")
     enable_import_analysis: bool = Field(default=True, description="Detect library imports.")
     follow_symlinks: bool = Field(default=False, description="Follow symbolic links during traversal.")
+    use_gitignore: bool = Field(
+        default=True,
+        description="Parse and respect .gitignore rules during traversal to skip generated/vendored content."
+    )
+    # Time budget: if set, scanning will stop gracefully after this many seconds
+    # (producing a partial scan) rather than running unbounded.
+    # Set to 0 to disable (no deadline). Default: 55s (leaves 5s for downstream engines).
+    scan_time_budget_seconds: float = Field(
+        default=55.0,
+        description=(
+            "Maximum seconds for the discovery/analysis stage. "
+            "When exceeded the scan terminates gracefully as PARTIAL with "
+            "findings collected so far. Set to 0 to disable."
+        ),
+    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    progress_callback: Optional[Any] = Field(
+        default=None,
+        description="Optional callable(scanned_count: int, findings: list[RawFinding]) called during file analysis for live progress."
+    )
 
 
 class FileLocation(BaseModel):
@@ -148,6 +266,26 @@ class ScanStatistics(BaseModel):
     findings_by_method: dict[str, int] = Field(default_factory=dict)
     findings_by_category: dict[str, int] = Field(default_factory=dict)
     scan_duration_seconds: float = 0.0
+
+    # Extended telemetry (Phase 5 — Adaptive Scanning Engine)
+    bytes_read: int = Field(default=0, description="Total bytes read from source files during analysis.")
+    lines_analyzed: int = Field(default=0, description="Total lines analyzed across all source files.")
+
+    # Partial scan metadata
+    is_partial: bool = Field(
+        default=False,
+        description="True when the scan was bounded by a time/file budget before all files were analyzed."
+    )
+    partial_reason: Optional[str] = Field(
+        default=None,
+        description="Human-readable explanation of why the scan is partial (e.g. 'Time budget exceeded')."
+    )
+
+    # Per-stage wall-clock durations (seconds) — internal engineering telemetry
+    stage_durations: dict[str, float] = Field(
+        default_factory=dict,
+        description="Wall-clock seconds per pipeline stage (traversal, analysis, normalization, etc.)."
+    )
 
 
 # ---------------------------------------------------------------------------

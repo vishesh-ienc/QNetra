@@ -108,7 +108,7 @@ export function CbomPage() {
     setXmlError(null);
     try {
       const exported = await api.exportCbom(scanId, 'xml');
-      saveFile(exported.content, exported.filename, exported.mediaType);
+      saveFile(exported.blob, exported.filename, exported.mediaType);
     } catch (caught) {
       setXmlError(caught);
     } finally {
@@ -466,8 +466,8 @@ export function CbomPage() {
  * Module-level so it always resolves the real global `document` — the
  * component above shadows that name with the CBOM document it renders.
  */
-function saveFile(content: string, filename: string, mediaType: string): void {
-  const blob = new Blob([content], { type: mediaType });
+function saveFile(content: string | Blob, filename: string, mediaType: string): void {
+  const blob = content instanceof Blob ? content : new Blob([content], { type: mediaType });
   const url = URL.createObjectURL(blob);
   const link = window.document.createElement('a');
   link.href = url;

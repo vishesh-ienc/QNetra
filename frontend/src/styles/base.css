@@ -1,9 +1,11 @@
 /* Fonts are bundled rather than fetched from a CDN: QNetra is expected to run in
    restricted and air-gapped enterprise networks, and typography must not depend
    on outbound access. */
-@import "@fontsource-variable/inter";
+@import "@fontsource-variable/ibm-plex-sans";
 @import "@fontsource-variable/jetbrains-mono";
 @import "./tokens.css";
+
+
 
 /* ==========================================================================
    Reset + base typography

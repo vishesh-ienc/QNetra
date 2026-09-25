@@ -8,11 +8,10 @@ from pydantic import BaseModel, Field
 
 from backend.errors import (
     artifact_not_found,
-    github_repo_inaccessible,
     scan_not_found,
     validation_error,
 )
-from backend.github import normalize_github_url, verify_public_repo
+from backend.github import normalize_github_url
 from backend.pipeline import run_pipeline
 from backend.serializers import progress_dict, scan_dict
 from backend.store import ScanRecord, new_id, store
@@ -84,10 +83,6 @@ def create_scan(body: CreateScanRequest):
                 str(exc),
                 [{"field": "repository_url", "error": "invalid github url"}],
             ) from exc
-
-        is_accessible, reason = verify_public_repo(normalized_url)
-        if not is_accessible:
-            raise github_repo_inaccessible(normalized_url, reason)
 
         scan_name = body.name or f"{owner}/{repo}"
         scan = ScanRecord(

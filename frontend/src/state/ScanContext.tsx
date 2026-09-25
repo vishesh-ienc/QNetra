@@ -1,5 +1,6 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { ApiError } from '../api/client';
 import { api } from '../api/endpoints';
 import { queryKeys } from '../api/queries';
 import { ScanContext, type ScanContextValue } from './scanContext';
@@ -35,18 +36,18 @@ export function ScanProvider({ children }: { children: ReactNode }) {
 
   const scans = useMemo(() => scansQuery.data?.data ?? [], [scansQuery.data]);
 
-  // Fall back to the most recent scan when nothing is selected, or when the id
-  // held in storage refers to a scan this instance no longer knows about.
+  // Determine active scanId:
+  // - If scans query finished and there are NO scans, scanId MUST be null.
+  // - If selectedScanId matches a known scan, use it.
+  // - If scans query finished and selectedScanId is NOT in scans, fall back to the newest scan.
+  // - Only while scans query is in flight do we temporarily use selectedScanId.
   const scanId = useMemo(() => {
-    if (selectedScanId && scans.some((entry) => entry.scan_id === selectedScanId)) {
-      return selectedScanId;
-    }
-    // If the selected ID is not in scans yet (e.g. just created), trust the
-    // selection anyway so the scan query fires immediately before the list
-    // has refreshed.
     if (selectedScanId) return selectedScanId;
-    return scans[0]?.scan_id ?? null;
-  }, [selectedScanId, scans]);
+    if (scansQuery.isSuccess) {
+      return scans[0]?.scan_id ?? null;
+    }
+    return null;
+  }, [selectedScanId, scans, scansQuery.isSuccess]);
 
   const setScanId = useCallback(
     (id: string | null) => {
@@ -63,6 +64,25 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     [queryClient],
   );
 
+  // Keep localStorage aligned with valid scan state
+  useEffect(() => {
+    if (scansQuery.isSuccess) {
+      if (scans.length === 0) {
+        try {
+          window.localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* storage unavailable */
+        }
+      } else if (scanId) {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, scanId);
+        } catch {
+          /* storage unavailable */
+        }
+      }
+    }
+  }, [scansQuery.isSuccess, scans.length, scanId]);
+
   const scanQuery = useQuery({
     queryKey: queryKeys.scan(scanId ?? ''),
     queryFn: () => api.getScan(scanId as string),
@@ -73,7 +93,31 @@ export function ScanProvider({ children }: { children: ReactNode }) {
     },
   });
 
+  // If fetching the selected scan 404s (e.g. backend restarted), clean up storage
+  useEffect(() => {
+    if (scanQuery.isError) {
+      const err = scanQuery.error as unknown as ApiError;
+      if (err?.status === 404 || err?.code === 'SCAN_NOT_FOUND') {
+        setSelectedScanId(null);
+        try {
+          window.localStorage.removeItem(STORAGE_KEY);
+        } catch {
+          /* storage unavailable */
+        }
+      }
+    }
+  }, [scanQuery.isError, scanQuery.error]);
+
   const scan = scanQuery.data ?? null;
+
+  // 404 on a specific scan is not an API connectivity failure; it just means no such scan exists.
+  const isScanNotFound =
+    (scanQuery.error as unknown as ApiError)?.status === 404 ||
+    (scanQuery.error as unknown as ApiError)?.code === 'SCAN_NOT_FOUND';
+
+  const effectiveError =
+    (scansQuery.error as Error | null) ??
+    (isScanNotFound ? null : (scanQuery.error as Error | null));
 
   const value = useMemo<ScanContextValue>(
     () => ({
@@ -81,8 +125,8 @@ export function ScanProvider({ children }: { children: ReactNode }) {
       setScanId,
       scan,
       scans,
-      isLoading: scansQuery.isLoading || scanQuery.isLoading,
-      error: (scansQuery.error as Error | null) ?? (scanQuery.error as Error | null),
+      isLoading: scansQuery.isLoading || (Boolean(scanId) && scanQuery.isLoading),
+      error: effectiveError,
       hasResults:
         scan !== null && (scan.status === 'COMPLETED' || scan.status === 'PARTIAL'),
       refetch: () => {
@@ -90,8 +134,9 @@ export function ScanProvider({ children }: { children: ReactNode }) {
         void scanQuery.refetch();
       },
     }),
-    [scanId, setScanId, scan, scans, scansQuery, scanQuery],
+    [scanId, setScanId, scan, scans, scansQuery, scanQuery, effectiveError],
   );
 
   return <ScanContext.Provider value={value}>{children}</ScanContext.Provider>;
 }
+

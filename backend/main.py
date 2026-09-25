@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from backend.errors import ApiError
-from backend.routes import artifacts, assets, cbom, exports, findings, mosca, recommendations, risk, scans
+from backend.routes import artifacts, assets, cbom, exports, findings, mosca, recommendations, reports, risk, scans
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
@@ -46,6 +46,7 @@ app.include_router(mosca.router, prefix=API_PREFIX)
 app.include_router(recommendations.router, prefix=API_PREFIX)
 app.include_router(cbom.router, prefix=API_PREFIX)
 app.include_router(exports.router, prefix=API_PREFIX)
+app.include_router(reports.router, prefix=API_PREFIX)
 
 
 @app.exception_handler(ApiError)

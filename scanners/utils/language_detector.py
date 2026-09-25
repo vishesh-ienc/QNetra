@@ -123,15 +123,26 @@ _BINARY_MAGIC: set[bytes] = {
 }
 
 
+# Extensions that unambiguously identify source code — skip binary magic check.
+# Magic check is only needed for ambiguous extensions (no extension, .dat, .bin, etc.)
+_SOURCE_EXTENSIONS: frozenset[str] = frozenset(
+    ext for ext, lang in _EXTENSION_MAP.items()
+    if lang not in (Language.BINARY, Language.MANIFEST, Language.UNKNOWN)
+)
+
+
 def detect_language(path: Path) -> Language:
     """
     Determine the programming language of a file.
 
     Detection order:
-      1. Known binary magic bytes → Language.BINARY
-      2. Known manifest filename → Language.MANIFEST
-      3. File extension → specific language
+      1. Manifest filename check (fast set lookup — catches requirements.txt, etc.)
+      2. Extension-based detection for unambiguous source extensions (no I/O needed)
+      3. Binary magic bytes check ONLY for ambiguous/unknown extensions
       4. Fallback → Language.UNKNOWN
+
+    Note: Steps 1-2 cover >99% of repository files without any filesystem I/O.
+    Step 3 is reserved for extensionless files or extensions not in the map.
 
     Args:
         path: File path to classify.
@@ -139,7 +150,25 @@ def detect_language(path: Path) -> Language:
     Returns:
         Language enum value.
     """
-    # Check binary magic bytes for files that might have misleading extensions
+    # Fast path: manifest filename check (before extension — catches "requirements.txt")
+    if path.name in _MANIFEST_FILENAMES:
+        return Language.MANIFEST
+
+    # Fast path: known source extension — no I/O needed
+    suffix = path.suffix.lower()
+    if suffix in _SOURCE_EXTENSIONS:
+        return _EXTENSION_MAP[suffix]
+
+    # Fast path: known binary extension — no I/O needed
+    if suffix in _EXTENSION_MAP and _EXTENSION_MAP[suffix] == Language.BINARY:
+        return Language.BINARY
+
+    # Fast path: manifest extension with non-manifest filename (e.g. .txt that isn't requirements.txt)
+    if suffix == ".txt":
+        return Language.UNKNOWN
+
+    # Slow path: check binary magic bytes only for ambiguous/unknown extensions
+    # (extensionless files, .dat, .bin, uncommon extensions not in the map)
     if path.is_file():
         try:
             with open(path, "rb") as fh:
@@ -150,18 +179,9 @@ def detect_language(path: Path) -> Language:
         except (OSError, PermissionError):
             pass
 
-    # Manifest filename check (before extension — catches "requirements.txt")
-    if path.name in _MANIFEST_FILENAMES:
-        return Language.MANIFEST
-
-    # Extension-based detection
-    suffix = path.suffix.lower()
+    # Extension-based detection for remaining known extensions
     if suffix in _EXTENSION_MAP:
-        lang = _EXTENSION_MAP[suffix]
-        # Double-check: .txt that isn't a manifest is UNKNOWN
-        if suffix == ".txt" and path.name not in _MANIFEST_FILENAMES:
-            return Language.UNKNOWN
-        return lang
+        return _EXTENSION_MAP[suffix]
 
     return Language.UNKNOWN
 

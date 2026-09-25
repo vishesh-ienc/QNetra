@@ -105,43 +105,31 @@ FastAPI Backend & Interactive Web UI Dashboard      [✓ IMPLEMENTED - Phase 4]
 
 ```text
 CURRENT PHASE:
-Phase 3 — Downstream Intelligence Engines (Risk, Mosca, Recommendations) (COMPLETE ✅)
+Phase 5 — Enterprise Reports & Exports Redesign (Export Center) (COMPLETE ✅)
 
 CURRENT SUB-PHASE:
-All Phase 3 Milestones Complete. Transitioning to Phase 4: FastAPI Backend & Interactive Web Dashboard.
+Phase 4 (Backend + Frontend + GitHub Scanning) and Phase 5 (Export Center & ReportLab PDF Subsystem) are both fully implemented and validated with 580/581 tests passing.
 
 LAST COMPLETED:
-Phase 3 Milestone 3.3 PQC Recommendation Engine (2026-09-04):
-  - Implemented core/recommendation_engine/__init__.py (public API exports)
-  - Implemented core/recommendation_engine/models.py (PQCRecommendationType, MigrationComplexity, PQCRecommendation, AssetRecommendationDetail, PQCRecommendationReport)
-  - Implemented core/recommendation_engine/knowledge.py (NIST FIPS 203/204/205 algorithm defs, parameter selection policy, hybrid constructions, rationale templates)
-  - Implemented core/recommendation_engine/mapper.py (pure stateless map_asset_to_recommendation() routing by algorithm family + primitive type)
-  - Implemented core/recommendation_engine/engine.py (RecommendationEngine: recommend, recommend_all, generate_report — pure functional, no mutation, no risk_score coupling)
-  - Created tests/test_core/test_recommendation_engine.py (104 tests, 93% coverage, 100% engine/models/knowledge/__init__)
-  - Full pipeline validated: 289 RawFindings → 147 Assets → 147 Classified → 147 Risk → 147 Mosca → 147 Recommendations
-  - Full test suite: 512 passed, 1 skipped, 0 failed
-  - ADR DEC-016: Table-driven routing, Risk independence, No-fabrication policy
-  - Updated docs/04, docs/05 (Alg-08), docs/07, docs/08 (DEC-016), PROJECT_CONTEXT.md, current_prompt_update.md
+Phase 5 Enterprise Export Center & ReportLab Subsystem (2026-09-15):
+  - Decoupled report extraction layer (`backend/reports/data.py`) with zero recalculation
+  - Pure-Python ReportLab 5.0.1 PDF engine (`backend/reports/pdf.py`) with custom two-pass `NumberedCanvas`
+  - Executive Cryptographic Assessment (PDF)
+  - PQC Migration Plan (PDF, CSV, JSON)
+  - Complete Technical Report (PDF)
+  - Dedicated CSV/JSON serializers for Crypto Assets, Evidence & Findings, and Custom Exports
+  - Interactive React Export Center with scan banner, recommended reports, data exports, complete assessment, and custom export matrix
+  - 13 new report tests (580 passed, 1 skipped, 0 failures)
 
 PREVIOUSLY COMPLETED:
-Phase 3 Milestone 3.1 Risk Engine (2026-09-04):
-  - Implemented core/risk_engine/__init__.py, models.py, knowledge.py, scorer.py, engine.py
-  - Created tests/test_core/test_risk_engine.py (41 tests, 98% risk engine coverage)
-  - Full pipeline verification: 289 RawFindings -> 147 Assets -> 147 Classified -> 147 Risk Assessments (overall 83.8 CRITICAL)
-Phase 2 Milestone 2.3 CBOM Generator (2026-09-04):
-  - CycloneDX 1.6 JSON/XML serialization, validator, mapper, models (116 tests, 92% coverage)
-Phase 2 Classification Subsystem & Normalization Hardening (2026-09-03):
-  - ClassificationEngine with orthogonal dimensions & no-fabrication policy (54 tests)
-Phase 2 Normalization & CryptoAsset Generation (2026-09-03):
-  - Canonical CryptoAsset domain model, AlgorithmNormalizer, Deduplicator (UUIDv5), ConfidenceAggregator
-Phase 1 Discovery Layer Implementation & Validation:
-  - BaseScanner, ScannerRouter, registries, Repository/Container/Binary scanners, 77 tests (289 real findings)
+Phase 4 Public GitHub Repository Scanning (2026-09-15)
+Phase 4 FastAPI Backend + Interactive React Dashboard (2026-09-04)
+Phase 3 Downstream Intelligence Engines (Risk, Mosca, Recommendations) (2026-09-04)
+Phase 2 Normalization, Classification & CycloneDX 1.6 CBOM Generation (2026-09-03)
+Phase 1 Discovery Layer (Repository, Container, Binary Scanners) (2026-08-29)
 
 CURRENTLY IMPLEMENTING:
-Phase 3 Milestone 3.3: NIST PQC & Hybrid Recommendation Engine (core.recommendation_engine).
-
-NEXT LOGICAL STEP:
-Phase 3 Milestone 3.3: NIST FIPS 203/204/205 PQC Recommendation Engine.
+Presentation Polish & Final Packaging (Production Readiness).
   - Algorithmic replacement mapping (RSA → ML-KEM, ECDSA → ML-DSA, etc.)
   - Hybrid transition scheme recommendations.
   - Per-asset PQCRecommendation dataclass.
@@ -337,31 +325,19 @@ QNetra/
 
 ---
 
-## 12. Immediate Next Development Steps
+## 12. Current Status & Phase 4 Delivery
 
 ```text
-RECOMMENDED CONTINUATION POINT (PHASE 4):
-
-1. [COMPLETED] Implement `core/normalization/`
-2. [COMPLETED] Implement `core/classification/`
-3. [COMPLETED] Implement `core/cbom_generator/`
-4. [COMPLETED] Implement `core/risk_engine/`
-5. [COMPLETED] Implement `core/mosca_engine/`
-6. [COMPLETED] Implement `core/recommendation_engine/`
-
-7. [NEXT] Phase 4: Implement `backend/api/` (FastAPI REST gateway)
-   - POST /api/scan  (trigger scan pipeline)
-   - GET  /api/cbom  (retrieve generated CBOM)
-   - GET  /api/risk  (retrieve risk assessment report)
-   - GET  /api/mosca (retrieve Mosca assessment report)
-   - GET  /api/recommendations (retrieve PQC recommendation report)
-   - GET  /api/export (download PDF/CSV/CBOM)
-
-8. [NEXT] Phase 4: Implement `frontend/` (Interactive Web Dashboard)
-   - Executive summary risk scorecards
-   - Searchable/filterable CBOM table explorer
-   - Interactive Mosca timeline slider widget
-   - PQC migration guide renderer
+STATUS UPDATE:
+1. [COMPLETED] Phase 1: Cryptographic Discovery Framework & Scanners (Repository, Container, Binary)
+2. [COMPLETED] Phase 2: Normalization, Classification, and CycloneDX 1.6 CBOM Generation
+3. [COMPLETED] Phase 3: Risk Engine, Mosca Theorem Urgency Engine, PQC Migration Recommendations
+4. [COMPLETED] Phase 4: FastAPI REST Gateway (backend/) & Interactive Web UI (frontend/)
+5. [COMPLETED] Performance Optimization & Sub-60s Large Repo Pipeline:
+   - Direct shallow single-pass clone with blob filtering (OpenSSL acquired in ~32s)
+   - Dynamic discovery budget adapting to acquisition duration (guaranteeing total time ≤ 60s)
+   - Real-time progress callback streaming files scanned and findings to UI
+   - Immediate navigation to /posture on scan completion and history selection
 ```
 
 ---

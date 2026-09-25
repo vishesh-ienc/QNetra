@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { formatDateTime, formatDuration, formatNumber, NOT_AVAILABLE } from '../lib/format';
+import { formatDateTime, formatDuration, formatNumber, NOT_AVAILABLE, scanDisplayName } from '../lib/format';
 import { severityTone } from '../lib/labels';
 import { Badge, PageHeader } from '../components/primitives';
 import { useScanContext } from '../state/useScanContext';
@@ -33,10 +33,6 @@ const STATUS_TONE: Record<ScanStatus, string> = {
 /* Helpers                                                                    */
 /* -------------------------------------------------------------------------- */
 
-/** Best display name for a scan: user-supplied name → target name → scan ID. */
-function scanDisplayName(scan: Scan): string {
-  return scan.name ?? scan.target.name ?? scan.scan_id.slice(0, 8);
-}
 
 /** Distinguish scan sources per prompt specifications: Uploaded Repository, GitHub Repository, Binary, Container. */
 function scanSourceLabel(scan: Scan): string {
@@ -77,7 +73,7 @@ export function ScanHistoryPage() {
     if (scan.status === 'RUNNING' || scan.status === 'QUEUED') {
       navigate('/scan');
     } else {
-      navigate('/');
+      navigate('/posture');
     }
   }
 
@@ -168,6 +164,8 @@ function ScanRow({
     <article
       className={`${styles.row} ${isActive ? styles.rowActive : ''} ${isFailed ? styles.rowFailed : ''}`}
       aria-current={isActive ? 'true' : undefined}
+      onClick={onOpen}
+      style={{ cursor: 'pointer' }}
     >
       {/* Active indicator strip */}
       {isActive && <span className={styles.activeStrip} aria-hidden="true" />}
@@ -268,7 +266,10 @@ function ScanRow({
         <button
           type="button"
           className={`${styles.openBtn} ${isActive ? styles.openBtnActive : ''}`}
-          onClick={onOpen}
+          onClick={(e) => {
+            e.stopPropagation();
+            onOpen();
+          }}
           aria-label={`Open scan ${scanDisplayName(scan)}`}
         >
           {isActive

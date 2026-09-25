@@ -137,7 +137,10 @@ export function ScanGate({ requiredStage, pageName, children }: ScanGateProps) {
   }
 
   /* ── API error ──────────────────────────────────────────────────────── */
-  if (error && !scan) {
+  const is404 = (error as unknown as { status?: number; code?: string })?.status === 404 ||
+    (error as unknown as { status?: number; code?: string })?.code === 'SCAN_NOT_FOUND';
+
+  if (error && !scan && !is404) {
     return (
       <>
         <PageHeader
@@ -160,8 +163,8 @@ export function ScanGate({ requiredStage, pageName, children }: ScanGateProps) {
           lede="QNetra analyses a target and turns what it finds into a cryptographic inventory, a risk assessment, and a migration plan."
         />
         <EmptyState
-          title="Nothing to show yet"
-          description="No scan has been run for this instance. Upload an artifact to begin."
+          title="You haven't started a scan yet"
+          description="No scan has been run for this instance yet. Upload an artifact or provide a repository to begin discovery."
           action={<Link to="/scan">Start a scan →</Link>}
         />
       </>

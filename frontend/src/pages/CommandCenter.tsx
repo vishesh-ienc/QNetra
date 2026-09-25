@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAssets, useCbom, useMosca, useRecommendations, useRisk } from '../api/queries';
 import { formatDuration, formatNumber, NOT_AVAILABLE } from '../lib/format';
 import {
@@ -27,6 +27,7 @@ import {
 import { AssetDrawer } from '../features/asset/AssetDrawer';
 import { useAssetIndex } from '../features/asset/useAssetIndex';
 import { useScanContext } from '../state/useScanContext';
+import { NoScanState } from './shared/NoScanState';
 import { ScanGate } from './shared/ScanGate';
 import styles from './CommandCenter.module.css';
 
@@ -47,7 +48,7 @@ export function CommandCenter() {
   });
   const { moscaByAsset, recommendationByAsset } = useAssetIndex(scanId);
 
-  if (!scanId || !scan) return <Navigate to="/scan" replace />;
+  if (!scanId || !scan) return <NoScanState />;
   if (!hasResults) return <ScanGate requiredStage="RISK_ANALYSIS" pageName="Cryptographic Posture"><></></ScanGate>;
 
   const report = risk.data;
